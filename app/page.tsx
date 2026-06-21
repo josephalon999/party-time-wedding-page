@@ -626,6 +626,53 @@ function HowItWorksSection() {
 }
 
 /* ─────────────────────────────────────────────
+   NEW SECTION — WEDDING RESULT PREVIEW
+───────────────────────────────────────────── */
+function WeddingResultSection({ onCTA }: { onCTA: () => void }) {
+  return (
+    <section className="section-py px-4" style={{ background: "#1e1330" }}>
+      <div className="max-w-3xl mx-auto text-center">
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
+          <motion.p variants={fadeUp} className="text-gold text-sm font-semibold tracking-widest uppercase mb-3">
+            התוצאה בפועל
+          </motion.p>
+          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-4">
+            הצצה איך זה נראה
+            <br />
+            <span className="gold-shimmer">בחתונה אמיתית</span>
+          </motion.h2>
+          <motion.p variants={fadeUp} className="text-cream-muted mb-10 max-w-lg mx-auto">
+            לא סטודיו. לא תרגול. חתונה אמיתית — זוג שעבר את התהליך, ורוקד ברגע האמיתי.
+          </motion.p>
+
+          <motion.div variants={fadeUp} className="video-wrapper max-w-2xl mx-auto"
+            style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(212,175,55,0.35)",
+              boxShadow: "0 0 40px rgba(212,175,55,0.12)" }}>
+            <iframe
+              src="https://player.vimeo.com/video/412297335"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              title="תוצאות Party Time בחתונה אמיתית"
+            />
+          </motion.div>
+
+          <motion.button
+            variants={fadeUp}
+            onClick={onCTA}
+            className="mt-10 rounded-full text-lg font-bold px-8 py-4"
+            style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            אני רוצה שזה יהיה הריקוד שלנו ←
+          </motion.button>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────
    NEW SECTION — THE SECRET
 ───────────────────────────────────────────── */
 function TheSecretSection({ onCTA }: { onCTA: () => void }) {
@@ -1191,6 +1238,9 @@ export default function Page() {
 
         <div className="gold-divider" />
         <HowItWorksSection />
+
+        <div className="gold-divider" />
+        <WeddingResultSection onCTA={() => openModal()} />
 
         <div className="gold-divider" />
         <TheSecretSection onCTA={() => openModal()} />
