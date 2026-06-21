@@ -184,12 +184,10 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden text-center px-4">
       <div className="absolute inset-0 z-0">
-        <iframe
-          src="https://player.vimeo.com/video/1009590139?background=1&autoplay=1&loop=1&muted=1&quality=720p"
-          allow="autoplay; fullscreen"
-          className="absolute"
-          style={{ border: "none", top: "50%", left: "50%", minWidth: "100%", minHeight: "100%", transform: "translate(-50%, -50%)" }}
-          title="רקע ריקוד"
+        <img
+          src="/images/wedding.png"
+          alt=""
+          className="absolute w-full h-full object-cover object-center"
         />
       </div>
 
