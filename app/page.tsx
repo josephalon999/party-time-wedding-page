@@ -887,6 +887,7 @@ const packages = [
     ],
     cta: "אני רוצה את זה ←",
     featured: false,
+    checkoutUrl: "/checkout/digital",
   },
   {
     name: "דיגיטלי + שיעור פרטי",
@@ -899,6 +900,7 @@ const packages = [
     ],
     cta: "בואו נתחיל ←",
     featured: false,
+    checkoutUrl: "/checkout/basic",
   },
   {
     name: "דיגיטלי + 2 שיעורים",
@@ -911,6 +913,7 @@ const packages = [
     ],
     cta: "זה המסלול שלנו ←",
     featured: false,
+    checkoutUrl: "/checkout/standard",
   },
   {
     name: "החבילה המלאה",
@@ -927,10 +930,11 @@ const packages = [
     cta: "אני רוצה את הריקוד המלא ←",
     featured: true,
     badge: "⭐ הכי פופולרי",
+    checkoutUrl: "/checkout/full",
   },
 ];
 
-function PackagesSection({ onCTA }: { onCTA: (label: string) => void }) {
+function PackagesSection() {
   return (
     <section className="section-py px-4" style={{ background: "#1e1330" }}>
       <div className="max-w-5xl mx-auto">
@@ -992,9 +996,9 @@ function PackagesSection({ onCTA }: { onCTA: (label: string) => void }) {
                   ))}
                 </ul>
 
-                <motion.button
-                  onClick={() => onCTA(pkg.name)}
-                  className="w-full rounded-xl py-3 font-bold text-sm"
+                <motion.a
+                  href={pkg.checkoutUrl}
+                  className="w-full rounded-xl py-3 font-bold text-sm block text-center"
                   style={
                     pkg.featured
                       ? { background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }
@@ -1004,7 +1008,7 @@ function PackagesSection({ onCTA }: { onCTA: (label: string) => void }) {
                   whileTap={{ scale: 0.97 }}
                 >
                   {pkg.cta}
-                </motion.button>
+                </motion.a>
               </motion.div>
             ))}
           </div>
@@ -1252,7 +1256,7 @@ export default function Page() {
         <VideoTestimonialsSection />
 
         <div className="gold-divider" />
-        <PackagesSection onCTA={(label) => openModal(label)} />
+        <PackagesSection />
 
         <div className="gold-divider" />
         <AuthoritySection onCTA={() => openModal()} />
