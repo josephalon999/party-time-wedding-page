@@ -220,7 +220,7 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
             השמלה. הפרחים. התפריט. הצלם.
           </span>
           <span className="block mt-2 gold-shimmer">
-            ואז הגיע ריקוד הפתיחה — ופתאום קפאון.
+            ואז הגיע ריקוד הפתיחה ופתאום קפאון.
           </span>
         </motion.h1>
 
