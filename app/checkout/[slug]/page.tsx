@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import { motion } from "framer-motion";
 import { notFound } from "next/navigation";
 
@@ -95,8 +95,9 @@ const stagger = {
   visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
 };
 
-export default function CheckoutPage({ params }: { params: { slug: string } }) {
-  const pkg = PACKAGES[params.slug];
+export default function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const pkg = PACKAGES[slug];
   if (!pkg) notFound();
 
   const [form, setForm] = useState({ name: "", phone: "", email: "", consent: false });
@@ -130,7 +131,7 @@ export default function CheckoutPage({ params }: { params: { slug: string } }) {
           package: pkg.name,
           price: pkg.price,
           group: "דף מכירה פארטי טיים חתן כלה",
-          source: `checkout-${params.slug}`,
+          source: `checkout-${slug}`,
         }),
       });
       setStatus("success");
