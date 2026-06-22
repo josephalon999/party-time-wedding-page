@@ -193,7 +193,7 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
 
       <div
         className="absolute inset-0 z-10"
-        style={{ background: "linear-gradient(to bottom, rgba(18,11,26,0.75) 0%, rgba(18,11,26,0.55) 50%, rgba(18,11,26,0.92) 100%)" }}
+        style={{ background: "linear-gradient(to bottom, rgba(18,11,26,0.88) 0%, rgba(18,11,26,0.72) 50%, rgba(18,11,26,0.96) 100%)" }}
       />
 
       <motion.div
