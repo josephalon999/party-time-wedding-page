@@ -114,31 +114,31 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
     return e;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setStatus("loading");
-    try {
-      await fetch(RAVMESAGE_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          phone: form.phone,
-          email: form.email,
-          consent: true,
-          package: pkg.name,
-          price: pkg.price,
-          group: "דף מכירה פארטי טיים חתן כלה",
-          source: `checkout-${slug}`,
-        }),
-      });
-      setStatus("success");
-      setTimeout(() => { window.location.href = pkg.cardcomUrl; }, 1200);
-    } catch {
-      setStatus("error");
-    }
+
+    // שליחה ל-RavMesage ברקע — לא חוסמת את המעבר לתשלום
+    fetch(RAVMESAGE_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        consent: true,
+        package: pkg.name,
+        price: pkg.price,
+        group: "דף מכירה פארטי טיים חתן כלה",
+        source: `checkout-${slug}`,
+      }),
+    }).catch(() => {});
+
+    // מעבר לקארדקום תמיד
+    setStatus("success");
+    setTimeout(() => { window.location.href = pkg.cardcomUrl; }, 1200);
   };
 
   return (
