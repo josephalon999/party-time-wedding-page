@@ -31,11 +31,11 @@ const PACKAGES: Record<string, {
     ],
     image: "/images/digital.png",
     imageAlt: "קורס Party Time הדיגיטלי",
-    cardcomUrl: "https://YOUR_CARDCOM_URL_DIGITAL",
+    cardcomUrl: "https://secure.cardcom.solutions/EA/EA5/COGb4YyUjUuCokKzUB84dg/PaymentSP",
   },
   basic: {
     name: "דיגיטלי + שיעור פרטי",
-    price: "970",
+    price: "870",
     tagline: "קורס + מגע אישי",
     features: [
       "קורס דיגיטלי מלא",
@@ -45,11 +45,11 @@ const PACKAGES: Record<string, {
     ],
     image: "/images/couple2.jpg",
     imageAlt: "זוג רוקד סלואו אלגנטי",
-    cardcomUrl: "https://YOUR_CARDCOM_URL_BASIC",
+    cardcomUrl: "https://secure.cardcom.solutions/EA/EA5/mwv58DZy5kq4iFKs9HpyGg/PaymentSP",
   },
   standard: {
     name: "דיגיטלי + 2 שיעורים",
-    price: "1,500",
+    price: "1,490",
     tagline: "כשרוצים לבוא מוכנים",
     features: [
       "קורס דיגיטלי מלא",
@@ -59,11 +59,11 @@ const PACKAGES: Record<string, {
     ],
     image: "/images/couple.png",
     imageAlt: "זוג רוקד חופשי במסיבה",
-    cardcomUrl: "https://YOUR_CARDCOM_URL_STANDARD",
+    cardcomUrl: "https://secure.cardcom.solutions/EA/EA5/xRA8KTFeOkqq0wD3gAtEOw/PaymentSP",
   },
   full: {
     name: "החבילה המלאה",
-    price: "2,600",
+    price: "2,497",
     tagline: "מהפחד — לריקוד שיזכרו",
     badge: "⭐ הכי פופולרי",
     features: [
@@ -76,7 +76,7 @@ const PACKAGES: Record<string, {
     ],
     image: "/images/wedding.png",
     imageAlt: "חתן וכלה רוקדים בחתונה",
-    cardcomUrl: "https://YOUR_CARDCOM_URL_FULL",
+    cardcomUrl: "https://secure.cardcom.solutions/EA/EA5/xhRTD69s0yDewgiI3A7gg/PaymentSP",
   },
 };
 

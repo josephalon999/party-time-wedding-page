@@ -891,7 +891,7 @@ const packages = [
   },
   {
     name: "דיגיטלי + שיעור פרטי",
-    price: "970",
+    price: "870",
     tagline: "קורס + מגע אישי",
     features: [
       "קורס דיגיטלי מלא",
@@ -904,7 +904,7 @@ const packages = [
   },
   {
     name: "דיגיטלי + 2 שיעורים",
-    price: "1,500",
+    price: "1,490",
     tagline: "כשרוצים לבוא מוכנים",
     features: [
       "קורס דיגיטלי מלא",
@@ -917,7 +917,7 @@ const packages = [
   },
   {
     name: "החבילה המלאה",
-    price: "2,600",
+    price: "2,497",
     tagline: "מהפחד — לריקוד שיזכרו",
     features: [
       "קורס דיגיטלי מלא",
