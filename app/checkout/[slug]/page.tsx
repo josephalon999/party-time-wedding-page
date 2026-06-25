@@ -120,19 +120,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setStatus("loading");
 
-    // שליחה ל-RavMesage ברקע — לא חוסמת את המעבר לתשלום
-    fetch(RAVMESAGE_WEBHOOK_URL, {
+    // שליחה לרב-פייג' ברקע דרך ה-API route — לא חוסמת את המעבר לתשלום
+    fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: form.name,
         phone: form.phone,
         email: form.email,
-        consent: true,
-        package: pkg.name,
+        packageName: pkg.name,
         price: pkg.price,
-        group: "דף מכירה פארטי טיים חתן כלה",
-        source: `checkout-${slug}`,
       }),
     }).catch(() => {});
 
