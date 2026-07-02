@@ -1,1277 +1,1437 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  useInView,
+  AnimatePresence,
+} from "framer-motion";
+import Image from "next/image";
+import { useRef, useState, useEffect, useCallback } from "react";
 
-/* ─────────────────────────────────────────────
-   ANIMATION VARIANTS
-───────────────────────────────────────────── */
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: "easeOut" } },
-};
+// ─── Data ────────────────────────────────────────────────────────────────────
 
-const stagger = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-};
+const WA_NUMBER = "972507562332";
 
-/* ─────────────────────────────────────────────
-   LEAD MODAL
-   TODO: החלף את RAVMESAGE_WEBHOOK_URL בכתובת
-   ה-Webhook של קבוצת "דף מכירה פארטי טיים חתן כלה"
-   מתוך חשבון הרב-מסר שלך
-───────────────────────────────────────────── */
-const RAVMESAGE_WEBHOOK_URL = "https://YOUR_RAVMESAGE_WEBHOOK_URL_HERE";
+function waLink(track: string) {
+  const msg = encodeURIComponent(
+    `היי יוסף, אני מעוניין במסלול "${track}" — Party Time לגרושים 🕺`
+  );
+  return `https://wa.me/${WA_NUMBER}?text=${msg}`;
+}
 
-function LeadModal({
-  isOpen,
-  onClose,
-  packageLabel,
+const COURSE_PREVIEW_ID = "914578337";
+
+const videoTestimonialIds = [
+  "911148534",
+  "903033668",
+  "923164499",
+  "923150829",
+  "923152251",
+  "923150873",
+  "799388963",
+  "836026234",
+];
+
+const painPoints = [
+  "הגעת לחתונה, ראית אישה מהממת ברחבה — ולא זזת",
+  "עמדת עם כוס בירה בצד, מחייך מלאכותי, מחכה שמשהו יקרה",
+  "בבית שאלת את עצמך: \"למה לא הלכתי אליה?\"",
+  "מרגיש שהגוף לא שלך מאז הגירושים",
+  "לא יודע איך בכלל מתחילים ריקוד עם אישה שלא הכרת",
+  "הפחד להיראות מגוחך חזק יותר מהרצון ליהנות",
+];
+
+const tracks = [
+  {
+    id: "digital",
+    emoji: "🎬",
+    name: "PARTY TIME SOS",
+    subtitle: "הצעד הראשון — מהבית",
+    price: "197",
+    description: "קורס וידאו מוקלט. תתחיל לשחרר את הגוף — לפני שתגיע למסיבה.",
+    features: [
+      "5 תנועות ידיים ורגליים שישחררו אותך מיידית — גם אם האירוע עכשיו",
+      "תרגילי שחרור עצמי בבית",
+      "הסבר מה קורה לגוף אחרי גירושים",
+      "כלים ראשונים לריקוד חופשי",
+      "גישה לכל החיים",
+    ],
+    cta: "מתחיל מהבית",
+    gradient: "from-blue-900/40 to-violet-900/30",
+    border: "border-blue-500/20",
+    glow: "rgba(59,130,246,0.15)",
+    tag: null,
+  },
+  {
+    id: "shihrur",
+    emoji: "🔥",
+    name: "PARTY TIME MASTER",
+    subtitle: "2 מפגשים אישיים + קורס דיגיטלי",
+    price: "1,497",
+    description: "2 מפגשים עם יוסף וקורס דיגיטלי שמדמה 5 שיעורים פרטיים — זמין לכל החיים.",
+    features: [
+      "2 מפגשים אחד על אחד עם יוסף",
+      "קורס דיגיטלי שמדמה 5 שיעורים פרטיים",
+      "איך לרקוד מזרחית, טרנסים ומוזיקה של חתונות ומסיבות טבע",
+      "שחרור גופני ועבודה על ביטחון עצמי",
+      "גישה לקורס לכל החיים",
+    ],
+    cta: "אני רוצה להשתחרר",
+    gradient: "from-violet-900/40 to-purple-900/30",
+    border: "border-violet-500/30",
+    glow: "rgba(124,58,237,0.2)",
+    tag: "הנפוץ ביותר",
+  },
+  {
+    id: "hayetzia",
+    emoji: "⚡",
+    name: "PARTY TIME STAR",
+    subtitle: "התהליך המלא — הכל כלול",
+    price: "3,500",
+    description: "4 מפגשים אישיים + ליווי 30 יום + קורס דיגיטלי מלא + איך כובשים את הרחבה.",
+    features: [
+      "4 מפגשים אחד על אחד עם יוסף",
+      "ליווי צמוד 30 יום בוואטסאפ",
+      "איך לזהות מי בעניין ומי לא — ברגע",
+      "איך לגשת אליה גם כשהיא עם חברות",
+      "איך לגרום לה להתחיל איתך",
+      "לרקוד בצורה משוחררת וסקסית שמייצרת חוויה",
+      "לצאת מהערב עם המספר — piece of cake",
+      "להפסיק לתת לפחד מדחייה לנהל אותך",
+      "קורס דיגיטלי מלא: טרנסים, מזרחית, 80's, ישראלית, פופ, סלסה, סלואו ועוד",
+    ],
+    cta: "אני רוצה גם להכיר",
+    gradient: "from-pink-900/40 to-rose-900/30",
+    border: "border-pink-500/30",
+    glow: "rgba(236,72,153,0.2)",
+    tag: "הכי מומלץ",
+  },
+];
+
+const testimonials = [
+  {
+    name: "אריאל מ.",
+    age: "44",
+    city: "תל אביב",
+    track: "מסלול היציאה",
+    text: "אחרי הגירושים חשבתי שאני סוג של רהיט בחתונות. עמדתי בצד, שתיתי, עמדתי. יוסף עשה איתי משהו שלא ציפיתי — הוא לא לימד אותי טריקים. הוא החזיר לי את הגוף. בחתונה האחרונה, לא עמדתי בצד פעם אחת.",
+    stars: 5,
+  },
+  {
+    name: "מוטי ק.",
+    age: "38",
+    city: "ירושלים",
+    track: "מסלול השתחרות",
+    text: "הייתי בטוח שריקוד זה לא בשבילי. הגוף שלי, הקצב שלי — הכל הרגיש מגוחך. אחרי 3 מפגשים עם יוסף הרגשתי שינוי. לא הפכתי לרקדן. פשוט הפכתי למישהו שלא מתנצל על עצמו.",
+    stars: 5,
+  },
+  {
+    name: "רן ב.",
+    age: "51",
+    city: "חיפה",
+    track: "מסלול היציאה",
+    text: "לא האמנתי שאני אדבר עם אישה על רחבת ריקודים. לא הייתי שם 15 שנה. יוסף לימד אותי שריקוד הוא שיחה בלי מילים. הפכתי ל'אחד שרוקד' במסיבות. מה שקרה אחרי זה — זה כבר סיפור אחר.",
+    stars: 5,
+  },
+  {
+    name: "אייל ש.",
+    age: "42",
+    city: "רמת גן",
+    track: "מסלול השתחרות",
+    text: "בתחילה הרגשתי טיפש. גבר בן 42 לומד לרקוד? אבל אחרי הפגישה הראשונה הבנתי — זה לא על ריקוד. זה על לחזור לגוף שלי אחרי גירושים שמחקו אותי. ממליץ לכל גרוש שמרגיש קפוא.",
+    stars: 5,
+  },
+];
+
+const faqs = [
+  {
+    q: "אני לא יודע לרקוד בכלל — זה בסדר?",
+    a: "זה בדיוק בשבילך. לא מלמדים כאן צעדים. עובדים על שחרור הגוף, ביטחון ונוכחות. לא נדרש ניסיון קודם.",
+  },
+  {
+    q: "כמה זמן לוקח לראות שינוי?",
+    a: "מפגש 1 — שחרור, קלילות וחיבור לעצמך. מפגש 2 — כבר יש לך ביטחון לעלות לרחבה, להשתחרר ולדעת מה אתה עושה. מפגשים 3–4 — את כל הטכניקות כדי לתקשר ברחבה, גם עם אנשים אחרים, ולהמיס את הפחד מ'מה יחשבו'. התוצאות מהירות כי יוסף מתאים אישית לך את התנועות שמחמיאות לך.",
+  },
+  {
+    q: "הגירושים שלי היו לפני כמה שנים. עדיין רלוונטי?",
+    a: "כן. הגוף שומר על דפוסים הרבה אחרי שהראש עבר הלאה. גברים שמגיעים אלינו 5–7 שנים אחרי גירושים עוברים שינוי עמוק.",
+  },
+  {
+    q: "האם אדע איך לפנות לאישה ברחבה?",
+    a: "כן — זה בדיוק מה שמסלול PARTY TIME STAR בנוי עליו. תלמד לזהות מי בעניין ומי לא, איך לגשת אליה גם כשהיא עם חברות, איך לגרום לה להתחיל איתך, לרקוד בצורה משוחררת וסקסית שמייצרת חוויה — ולצאת מהערב עם המספר בטבעיות. בנוסף: איך להפסיק לתת לפחד מדחייה לנהל אותך.",
+  },
+  {
+    q: "יש קבוצות או זה רק אחד על אחד?",
+    a: "zoom",
+  },
+  {
+    q: "מה אם לא ארגיש שזה בשבילי?",
+    a: "במפגשים הפרונטליים — מעולם לא קרה שמישהו ביקש לבטל אחרי המפגש הראשון. אבל אם תרצה להפסיק, שאר הכסף חוזר אליך במלואו, מינוס 500 ₪ עבור המפגש הראשון שכבר התקיים.",
+  },
+];
+
+const methodSteps = [
+  {
+    icon: "🌊",
+    title: "מתאים לך אישית",
+    desc: "לא צעדים גנריים. מטפל תנועתי שמזהה מה מחמיא לגוף שלך — ובונה איתך משם.",
+  },
+  {
+    icon: "💪",
+    title: "ביטחון מתוך הגוף",
+    desc: "ביטחון אמיתי לא בא מהראש. בא ממה שהגוף שלך מרגיש כשהוא משוחרר.",
+  },
+  {
+    icon: "✨",
+    title: "נוכחות שמושכת",
+    desc: "כשהגוף שלך חי — אתה שולח תדר אחר. לפני שאמרת מילה.",
+  },
+];
+
+// ─── Components ───────────────────────────────────────────────────────────────
+
+function FadeIn({
+  children,
+  delay = 0,
+  className = "",
+  y = 40,
 }: {
-  isOpen: boolean;
-  onClose: () => void;
-  packageLabel?: string;
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+  y?: number;
 }) {
-  const [form, setForm] = useState({ name: "", phone: "", weddingDate: "" });
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus("loading");
-    try {
-      await fetch(RAVMESAGE_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          phone: form.phone,
-          wedding_date: form.weddingDate,
-          group: "דף מכירה פארטי טיים חתן כלה",
-          package: packageLabel || "general",
-          source: "landing-page-wedding",
-        }),
-      });
-      setStatus("success");
-    } catch {
-      setStatus("error");
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={(e) => e.target === e.currentTarget && onClose()}
-        >
-          <motion.div
-            className="relative w-full max-w-md rounded-2xl p-8"
-            style={{ background: "#1e1330", border: "1px solid rgba(212,175,55,0.5)" }}
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92 }}
-          >
-            <button
-              onClick={onClose}
-              className="absolute top-4 left-4 text-cream-muted hover:text-cream-DEFAULT text-2xl leading-none"
-              aria-label="סגור"
-            >
-              ✕
-            </button>
-
-            {status === "success" ? (
-              <div className="text-center py-6">
-                <div className="text-5xl mb-4">🎉</div>
-                <h3 className="font-serif text-2xl text-gold mb-2">קיבלנו!</h3>
-                <p className="text-cream-muted">יוסף יצור איתכם קשר בקרוב לתיאום.</p>
-              </div>
-            ) : (
-              <>
-                <h3 className="font-serif text-2xl font-bold text-gold mb-1 text-center">
-                  {packageLabel ? `בחרתם: ${packageLabel}` : "קבעו שיחה עם יוסף"}
-                </h3>
-                <p className="text-cream-muted text-sm text-center mb-6">
-                  ללא התחייבות — שיחה קצרה להכיר ולהתאים
-                </p>
-
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                  <div>
-                    <label className="block text-sm text-cream-muted mb-1">שם מלא *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      value={form.name}
-                      onChange={handleChange}
-                      placeholder="השם שלכם"
-                      className="w-full rounded-xl px-4 py-3 text-cream-DEFAULT placeholder-cream-muted/50 focus:outline-none focus:ring-2 focus:ring-gold"
-                      style={{ background: "rgba(18,11,26,0.8)", border: "1px solid rgba(212,175,55,0.3)" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-cream-muted mb-1">טלפון *</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder="050-0000000"
-                      className="w-full rounded-xl px-4 py-3 text-cream-DEFAULT placeholder-cream-muted/50 focus:outline-none focus:ring-2 focus:ring-gold"
-                      style={{ background: "rgba(18,11,26,0.8)", border: "1px solid rgba(212,175,55,0.3)" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-cream-muted mb-1">תאריך החתונה (בערך)</label>
-                    <input
-                      type="text"
-                      name="weddingDate"
-                      value={form.weddingDate}
-                      onChange={handleChange}
-                      placeholder="למשל: אוגוסט 2026"
-                      className="w-full rounded-xl px-4 py-3 text-cream-DEFAULT placeholder-cream-muted/50 focus:outline-none focus:ring-2 focus:ring-gold"
-                      style={{ background: "rgba(18,11,26,0.8)", border: "1px solid rgba(212,175,55,0.3)" }}
-                    />
-                  </div>
-
-                  <motion.button
-                    type="submit"
-                    disabled={status === "loading"}
-                    className="w-full rounded-xl py-4 font-bold text-lg mt-2 disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {status === "loading" ? "שולח..." : "אני רוצה את הרגע הזה ←"}
-                  </motion.button>
-
-                  {status === "error" && (
-                    <p className="text-red-400 text-sm text-center">
-                      משהו השתבש. נסו שוב או{" "}
-                      <a
-                        href="https://wa.me/972YOUR_PHONE?text=היי יוסף, ראיתי את דף Party Time למתחתנים ואני מעוניין/ת לשמוע עוד"
-                        className="underline text-gold"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        כתבו ישירות בוואטסאפ
-                      </a>
-                    </p>
-                  )}
-                </form>
-              </>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   SECTION 1 — HERO (upgraded)
-───────────────────────────────────────────── */
-function HeroSection({ onCTA }: { onCTA: () => void }) {
-  return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden text-center px-4">
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/images/wedding.png"
-          alt=""
-          className="absolute w-full h-full object-cover object-center"
-        />
-      </div>
-
-      <div
-        className="absolute inset-0 z-10"
-        style={{ background: "linear-gradient(to bottom, rgba(18,11,26,0.88) 0%, rgba(18,11,26,0.72) 50%, rgba(18,11,26,0.96) 100%)" }}
-      />
-
-      <motion.div
-        className="relative z-20 max-w-3xl mx-auto"
-        variants={stagger}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div
-          variants={fadeUp}
-          className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold mb-8"
-          style={{ background: "rgba(212,175,55,0.15)", border: "1px solid rgba(212,175,55,0.4)", color: "#D4AF37" }}
-        >
-          ✦ Party Time | למתחתנים ✦
-        </motion.div>
-
-        <motion.h1
-          variants={fadeUp}
-          className="font-serif font-black leading-tight mb-6"
-          style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", color: "#f5f0e8" }}
-        >
-          תכננתם את הכל.{" "}
-          <span className="block mt-1 text-cream-muted" style={{ fontSize: "85%", fontWeight: 600 }}>
-            השמלה. הפרחים. התפריט. הצלם.
-          </span>
-          <span className="block mt-2 gold-shimmer">
-            ואז הגיע ריקוד הפתיחה ופתאום קפאון.
-          </span>
-        </motion.h1>
-
-        <motion.p
-          variants={fadeUp}
-          className="text-cream-muted text-lg md:text-xl leading-relaxed mb-4 max-w-xl mx-auto"
-        >
-          200 אנשים אוהבים יסתכלו עליכם.
-          <br />
-          השאלה היא — האם תרגישו{" "}
-          <span style={{ color: "#D4AF37" }}>חופשיים ברגע הזה</span>,
-          <br />
-          או תספרו את השניות עד שייגמר?
-        </motion.p>
-
-        {/* NEW: expanded promise */}
-        <motion.p
-          variants={fadeUp}
-          className="text-cream-muted/70 text-base mb-10 max-w-lg mx-auto"
-          style={{ borderTop: "1px solid rgba(212,175,55,0.2)", paddingTop: "1rem" }}
-        >
-          ולא רק בריקוד הפתיחה —
-          <br />
-          <span className="text-cream-muted">מזרחית, פופ, 80s, לטיני — כל שיר שיתנגן כל הלילה.</span>
-        </motion.p>
-
-        <motion.button
-          variants={fadeUp}
-          onClick={onCTA}
-          className="rounded-full text-lg md:text-xl font-bold px-8 py-5 transition-all animate-pulse-gold"
-          style={{ background: "linear-gradient(135deg, #c9963f 0%, #D4AF37 100%)", color: "#120b1a" }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          אני רוצה שזה יהיה הרגע הכי יפה בחתונה שלנו ←
-        </motion.button>
-
-        <motion.p variants={fadeUp} className="mt-5 text-sm text-cream-muted/60">
-          ✓ ללא התחייבות &nbsp;·&nbsp; ✓ מתאים גם אם לא יודעים לרקוד בכלל &nbsp;·&nbsp; ✓ בלי אלכוהול
-        </motion.p>
-      </motion.div>
-
-      <motion.div
-        className="absolute bottom-8 left-1/2 z-20"
-        style={{ translateX: "-50%" }}
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 2 }}
-      >
-        <div className="text-gold/60 text-3xl">↓</div>
-      </motion.div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   SECTION 2 — PAIN (upgraded: adds music fear)
-───────────────────────────────────────────── */
-function PainSection() {
   const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "0px" });
   return (
-    <section className="section-py section-gradient-top px-4" ref={ref}>
-      <div className="max-w-2xl mx-auto text-center">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.p variants={fadeUp} className="text-gold text-sm font-semibold tracking-widest uppercase mb-3">
-            בואו נדבר על האמת
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-8">
-            בואו נדבר על מה שבאמת קורה
-          </motion.h2>
-
-          <motion.div variants={fadeUp} className="text-right leading-relaxed text-cream-muted text-lg space-y-4 mb-6">
-            <p>
-              אחד מכם — לרוב החתן — מרגיש שהוא לא יודע לרקוד.
-              <br />
-              אולי שניכם.
-            </p>
-            <p>הוא מנסה להרגיע את עצמו כבר שבועות:</p>
-          </motion.div>
-
-          <motion.div variants={stagger} className="space-y-3 mb-8">
-            {[
-              `"נעשה משהו פשוט"`,
-              `"אני אשאיר אותה להוביל"`,
-              `"בסוף יהיה בסדר"`,
-            ].map((quote) => (
-              <motion.div key={quote} variants={fadeUp}>
-                <div className="quote-text text-right text-lg italic">{quote}</div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* NEW: the all-night fear */}
-          <motion.div
-            variants={fadeUp}
-            className="glass-card p-6 text-right mt-6"
-            style={{ borderColor: "rgba(212,175,55,0.3)" }}
-          >
-            <p className="text-cream-muted leading-relaxed text-lg">
-              ואז? מתחילה מזרחית — ואתם יושבים.
-              <br />
-              מפעילים 80s — ואתם מחייכים מהצד.
-              <br />
-              מגיע לטיני — ואתה מציע לה לשתות.
-              <br />
-              <span className="text-cream-DEFAULT font-semibold block mt-3">
-                זה לא רק ריקוד הפתיחה שמפחיד אתכם.
-                <br />
-                זה כל הלילה.
-              </span>
-            </p>
-          </motion.div>
-
-          <motion.p variants={fadeUp} className="mt-8 text-cream-DEFAULT text-lg font-semibold">
-            הריקוד הזה תופס יותר מקום בראש{" "}
-            <span className="gold-shimmer">ממה שאתם מוכנים להודות.</span>
-          </motion.p>
-        </motion.div>
-      </div>
-    </section>
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y }}
+      transition={{ duration: 0.7, delay, ease: "easeOut" }}
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 }
 
-/* ─────────────────────────────────────────────
-   SECTION 3 — AGITATION (upgraded: frozen all night)
-───────────────────────────────────────────── */
-function AgitationSection() {
+function StarRating({ stars }: { stars: number }) {
   return (
-    <section className="section-py section-gradient-bottom px-4">
-      <div className="max-w-2xl mx-auto">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
+    <div className="flex gap-0.5">
+      {Array.from({ length: stars }).map((_, i) => (
+        <span key={i} className="text-amber-400 text-lg">★</span>
+      ))}
+    </div>
+  );
+}
 
-          {/* Wedding image — the dream that could be */}
-          <motion.div variants={fadeUp} className="relative rounded-2xl overflow-hidden mb-10" style={{ maxHeight: 340 }}>
-            <img
-              src="/images/wedding.png"
-              alt="זוג רוקד בחתונה"
-              className="w-full object-cover object-top"
-              style={{ maxHeight: 340 }}
-            />
+function FloatingOrb({
+  x,
+  y,
+  size,
+  color,
+  delay,
+}: {
+  x: string;
+  y: string;
+  size: string;
+  color: string;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      className="absolute rounded-full pointer-events-none"
+      style={{ left: x, top: y, width: size, height: size, background: color, filter: "blur(60px)" }}
+      animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+      transition={{ duration: 6 + delay, repeat: Infinity, ease: "easeInOut", delay }}
+    />
+  );
+}
+
+function SectionHeader({
+  tag,
+  title,
+  sub,
+}: {
+  tag?: string;
+  title: React.ReactNode;
+  sub?: string;
+}) {
+  return (
+    <FadeIn className="text-center mb-14">
+      {tag && (
+        <span className="inline-block px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-sm font-medium mb-4">
+          {tag}
+        </span>
+      )}
+      <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-4">{title}</h2>
+      {sub && <p className="text-gray-400 text-xl max-w-2xl mx-auto">{sub}</p>}
+    </FadeIn>
+  );
+}
+
+function VimeoCard({ id, large = false }: { id: string; large?: boolean }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <div
+      className={`relative rounded-2xl overflow-hidden border border-white/[0.07] bg-[#0d0a1e] group transition-all duration-300 hover:border-violet-500/30 ${large ? "shadow-2xl" : ""}`}
+      style={large ? { boxShadow: "0 0 60px rgba(124,58,237,0.2)" } : {}}
+    >
+      <div className="aspect-video relative">
+        {playing ? (
+          <iframe
+            src={`https://player.vimeo.com/video/${id}?autoplay=1&title=0&byline=0&portrait=0&badge=0&color=7c3aed`}
+            className="absolute inset-0 w-full h-full"
+            frameBorder="0"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <button
+            onClick={() => setPlaying(true)}
+            className="absolute inset-0 w-full h-full flex items-center justify-center"
+            aria-label="נגן וידאו"
+          >
             <div
               className="absolute inset-0"
-              style={{ background: "linear-gradient(to top, rgba(18,11,26,0.85) 0%, transparent 60%)" }}
-            />
-            <p className="absolute bottom-4 right-0 left-0 text-center font-serif text-lg text-cream-DEFAULT px-4">
-              ככה זה יכול להיראות בחתונה שלכם.
-            </p>
-          </motion.div>
-
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-8 text-center">
-            מאובנים בחתונה שלכם —<br />
-            <span className="text-gold">זה לא גזרת גורל.</span>
-          </motion.h2>
-
-          <motion.div variants={stagger} className="space-y-5 text-lg text-cream-muted leading-relaxed">
-            {[
-              { icon: "📸", text: "הצלם יתפוס את הפרצוף שלך כשאתה לא יודע לאן להוריד את הידיים." },
-              { icon: "🎵", text: "כל שיר שמתחיל — תסתכלו אחד על השני ולא תדעו מה לעשות. מזרחית, 80s, לטיני — כולם רוקדים, אתם יושבים." },
-              { icon: "🥂", text: `"נשתה עוד כוס כדי להשתחרר קצת." — הפתרון הכי שכיח. והכי עצוב.` },
-              { icon: "💭", text: "ותסיימו את הלילה עם הרגשה שיכול היה להיות אחרת. שהיה שווה לחגוג יותר." },
-            ].map(({ icon, text }) => (
-              <motion.div key={icon} variants={fadeUp} className="flex gap-4 items-start glass-card p-5">
-                <span className="text-2xl mt-0.5 flex-shrink-0">{icon}</span>
-                <p>{text}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          <motion.p variants={fadeUp} className="mt-8 text-center text-cream-muted text-base">
-            זה לא כאב גדול.{" "}
-            <span className="text-cream-DEFAULT font-semibold">אבל זה לילה שלא חוזר.</span>
-          </motion.p>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   SECTION 4 — SOLUTION (upgraded: broader promise)
-───────────────────────────────────────────── */
-function SolutionSection({ onCTA }: { onCTA: () => void }) {
-  return (
-    <section className="section-py px-4" style={{ background: "#1e1330" }}>
-      <div className="max-w-3xl mx-auto text-center">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.p variants={fadeUp} className="text-gold text-sm font-semibold tracking-widest uppercase mb-3">
-            הפתרון
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="font-serif font-black text-4xl md:text-5xl mb-4">
-            <span className="gold-shimmer">Party Time</span>
-          </motion.h2>
-          <motion.h3 variants={fadeUp} className="font-serif text-2xl md:text-3xl text-cream-DEFAULT mb-10">
-            לא ריקוד. <span className="text-gold">שחרור.</span>
-          </motion.h3>
-
-          <motion.div variants={stagger} className="grid md:grid-cols-3 gap-4 text-right mb-12">
-            {[
-              { label: "לא", value: "כוריאוגרפיה" },
-              { label: "לא", value: "ספירת 1-2-3" },
-              { label: "לא", value: "אלכוהול כדי להשתחרר" },
-            ].map(({ label, value }) => (
-              <motion.div key={value} variants={fadeUp} className="glass-card p-5">
-                <p className="text-cream-muted text-sm mb-1">{label}</p>
-                <p className="text-cream-DEFAULT font-bold text-lg">{value}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="text-cream-muted text-lg leading-loose mb-8 text-right">
-            <p className="mb-3 text-cream-DEFAULT font-semibold">מה שנעשה?</p>
-            <p className="mb-2">נשחרר את הגוף — לכל סגנון, לכל שיר, לכל רגע בלילה.</p>
-            <p className="mb-2">נבנה יחד את הסלואו שלכם — שיתאים לכם בדיוק, לא לאף אחד אחר.</p>
-            <p className="mb-2">
-              נחבר אתכם אחד לשני על הרחבה, כך שכשמגיע כל שיר —{" "}
-              <span className="text-cream-DEFAULT font-semibold">תדעו מה לעשות עם הגוף שלכם.</span>
-            </p>
-          </motion.div>
-
-          <motion.p variants={fadeUp} className="font-serif text-2xl text-gold font-bold mb-10">
-            "גם ייראה טוב — גם תהנו — גם בלי שיידעו"
-          </motion.p>
-
-          {/* couple2 — slow dance visual */}
-          <motion.div variants={fadeUp} className="relative rounded-2xl overflow-hidden mb-10 max-w-md mx-auto">
-            <img
-              src="/images/couple2.jpg"
-              alt="זוג רוקד סלואו"
-              className="w-full object-cover rounded-2xl"
-              style={{ maxHeight: 360, objectPosition: "center top" }}
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(124,58,237,0.15) 0%, rgba(6,6,15,0.8) 70%)",
+              }}
             />
             <div
-              className="absolute inset-0 rounded-2xl"
-              style={{ border: "1px solid rgba(212,175,55,0.4)", background: "linear-gradient(to top, rgba(18,11,26,0.6) 0%, transparent 50%)" }}
-            />
-            <p className="absolute bottom-4 right-0 left-0 text-center text-sm text-gold font-semibold">
-              הסלואו שלכם — מחובר, אמיתי, שלכם
-            </p>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="mb-10">
-            <p className="text-cream-muted text-sm mb-3 text-center">↓ הצצה לקורס הדיגיטלי</p>
-            <div className="video-wrapper max-w-xl mx-auto">
-              <iframe
-                src="https://player.vimeo.com/video/685120888"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-                title="הצצה לקורס Party Time"
-              />
+              className="relative z-10 flex items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110"
+              style={{
+                width: large ? 72 : 52,
+                height: large ? 72 : 52,
+                background: "linear-gradient(135deg, #7c3aed, #ec4899)",
+                boxShadow: "0 0 30px rgba(124,58,237,0.5)",
+              }}
+            >
+              <svg
+                width={large ? 26 : 18}
+                height={large ? 26 : 18}
+                viewBox="0 0 24 24"
+                fill="white"
+                style={{ marginRight: -2 }}
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
             </div>
-          </motion.div>
-
-          <motion.button
-            variants={fadeUp}
-            onClick={onCTA}
-            className="rounded-full text-lg font-bold px-8 py-4"
-            style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            אני רוצה להרגיש ככה בחתונה שלי ←
-          </motion.button>
-        </motion.div>
+          </button>
+        )}
       </div>
-    </section>
+    </div>
   );
 }
 
-/* ─────────────────────────────────────────────
-   NEW SECTION — MUSIC STYLES
-───────────────────────────────────────────── */
-const musicStyles = [
-  { emoji: "🎻", name: "סלואו", sub: "ריקוד הפתיחה שלכם" },
-  { emoji: "🎶", name: "מזרחית", sub: "כולם על הרחבה" },
-  { emoji: "🕺", name: "80s", sub: "כיף, קל, חופשי" },
-  { emoji: "💃", name: "לטיני", sub: "קצב וחיבור" },
-  { emoji: "🎸", name: "ישראלי", sub: "מהלב, בלי מחשבה" },
-  { emoji: "🔊", name: "פופ & טרנסים", sub: "אנרגיה, תנועה, הנאה" },
-];
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
-function MusicStylesSection() {
-  return (
-    <section className="section-py px-4" style={{ background: "#120b1a" }}>
-      <div className="max-w-4xl mx-auto">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.p variants={fadeUp} className="text-gold text-sm font-semibold tracking-widest uppercase mb-3 text-center">
-            לכל שיר שיתנגן
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-4 text-center">
-            לא רק ריקוד פתיחה.
-            <br />
-            <span className="gold-shimmer">כל הלילה. כל סגנון.</span>
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-cream-muted text-center mb-12 max-w-xl mx-auto">
-            אתם לא לומדים ריקוד מסוים. אתם לומדים לנוע חופשי בגוף שלכם —
-            ואז כל שיר שמגיע, הגוף כבר יודע מה לעשות.
-          </motion.p>
+export default function HomePage() {
+  const heroRef = useRef(null);
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {musicStyles.map((style, i) => (
-              <motion.div
-                key={style.name}
-                variants={fadeUp}
-                custom={i}
-                className="glass-card p-5 text-center"
-                whileHover={{ scale: 1.03, borderColor: "rgba(212,175,55,0.5)" }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="text-4xl mb-3">{style.emoji}</div>
-                <h3 className="font-serif font-bold text-cream-DEFAULT text-lg mb-1">{style.name}</h3>
-                <p className="text-cream-muted text-sm">{style.sub}</p>
-              </motion.div>
-            ))}
-          </div>
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [activeT, setActiveT] = useState(0);
 
-          {/* couple.png — energetic party dancing */}
-          <motion.div variants={fadeUp} className="relative rounded-2xl overflow-hidden mt-10">
-            <img
-              src="/images/couple.png"
-              alt="זוג רוקד חופשי במסיבה"
-              className="w-full object-cover rounded-2xl"
-              style={{ maxHeight: 320, objectPosition: "center 30%" }}
-            />
-            <div
-              className="absolute inset-0 rounded-2xl"
-              style={{ background: "linear-gradient(to top, rgba(18,11,26,0.8) 0%, transparent 55%)" }}
-            />
-            <p className="absolute bottom-5 right-0 left-0 text-center font-serif text-xl text-cream-DEFAULT px-4">
-              "כשהגוף חופשי — הרגלים נשכחים. הריקוד פשוט קורה."
-            </p>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
+  const nextT = useCallback(() => setActiveT((p) => (p + 1) % testimonials.length), []);
+  const prevT = useCallback(
+    () => setActiveT((p) => (p - 1 + testimonials.length) % testimonials.length),
+    []
   );
-}
 
-/* ─────────────────────────────────────────────
-   SECTION 5 — HOW IT WORKS (upgraded)
-───────────────────────────────────────────── */
-function HowItWorksSection() {
-  const steps = [
-    {
-      num: "01",
-      title: "שחרור הגוף לכל סגנון",
-      desc: "מתחילים מהבסיס — לא צעדים, לא תרגילים. משחררים את מה שמחזיק את הגוף שלכם קפוא. מזרחית, פופ, 80s — הגוף לומד להגיב לכל קצב.",
-      icon: "🌊",
-    },
-    {
-      num: "02",
-      title: "בניית הסלואו שלכם",
-      desc: "בונים יחד ריקוד פתיחה שמרגיש כמוכם — בנוח, אמיתי, מחובר. לא של אף אחד אחר. הסלואו שלכם, עם הרגעים שלכם.",
-      icon: "💍",
-    },
-    {
-      num: "03",
-      title: "חיבור הזוג על הרחבה",
-      desc: "לומדים לנוע ביחד — שהגוף שלכם מדבר אחד עם השני. וזה בדיוק מה שכולם מרגישים מהצד כשהם מסתכלים עליכם.",
-      icon: "✨",
-    },
-    {
-      num: "04",
-      title: "הרגע שלכם — בלי שיידעו",
-      desc: "זה הסוד. כולם יחשבו שאתם פשוט יודעים לרקוד. לא אחד ידע שהייתם בתהליך. הכל ייראה טבעי, זורם, ואמיתי.",
-      icon: "🤫",
-    },
-  ];
+  useEffect(() => {
+    const id = setInterval(nextT, 5500);
+    return () => clearInterval(id);
+  }, [nextT]);
 
   return (
-    <section className="section-py px-4" style={{ background: "#1e1330" }}>
-      <div className="max-w-4xl mx-auto">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-2 text-center">
-            איך זה עובד?
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-cream-muted text-center mb-12">
-            4 שלבים שמשנים הכל
-          </motion.p>
+    <main className="min-h-screen bg-[#06060f] text-white overflow-x-hidden" dir="rtl">
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
+      <section
+        ref={heroRef}
+        className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      >
+        {/* Hero background image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/mandance.jpg"
+            alt=""
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(6,6,15,0.75) 0%, rgba(6,6,15,0.6) 40%, rgba(6,6,15,0.92) 100%)" }} />
+        </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {steps.map((step) => (
-              <motion.div
-                key={step.num}
-                variants={fadeUp}
-                className="glass-card p-7 text-right relative overflow-hidden"
-                whileHover={{ borderColor: "rgba(212,175,55,0.6)", transition: { duration: 0.2 } }}
-              >
-                <div
-                  className="absolute top-4 left-4 font-black opacity-10 text-6xl"
-                  style={{ color: "#D4AF37", fontFamily: "serif" }}
-                >
-                  {step.num}
-                </div>
-                <div className="text-4xl mb-4">{step.icon}</div>
-                <h3 className="font-serif font-bold text-xl text-gold mb-3">{step.title}</h3>
-                <p className="text-cream-muted leading-relaxed">{step.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
+        {/* Background orbs */}
+        <FloatingOrb x="10%" y="20%" size="400px" color="rgba(124,58,237,0.12)" delay={0} />
+        <FloatingOrb x="60%" y="50%" size="300px" color="rgba(236,72,153,0.1)" delay={2} />
+        <FloatingOrb x="30%" y="70%" size="250px" color="rgba(59,130,246,0.08)" delay={4} />
 
-/* ─────────────────────────────────────────────
-   NEW SECTION — WEDDING RESULT PREVIEW
-───────────────────────────────────────────── */
-function WeddingResultSection({ onCTA }: { onCTA: () => void }) {
-  return (
-    <section className="section-py px-4" style={{ background: "#1e1330" }}>
-      <div className="max-w-3xl mx-auto text-center">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.p variants={fadeUp} className="text-gold text-sm font-semibold tracking-widest uppercase mb-3">
-            התוצאה בפועל
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-4">
-            הצצה איך זה נראה
-            <br />
-            <span className="gold-shimmer">בחתונה אמיתית</span>
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-cream-muted mb-10 max-w-lg mx-auto">
-            לא סטודיו. לא תרגול. חתונה אמיתית — זוג שעבר את התהליך, ורוקד ברגע האמיתי.
-          </motion.p>
+        {/* Grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
+            backgroundSize: "50px 50px",
+          }}
+        />
 
-          <motion.div variants={fadeUp} className="video-wrapper max-w-2xl mx-auto"
-            style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(212,175,55,0.35)",
-              boxShadow: "0 0 40px rgba(212,175,55,0.12)" }}>
-            <iframe
-              src="https://player.vimeo.com/video/412297335"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-              title="תוצאות Party Time בחתונה אמיתית"
-            />
-          </motion.div>
-
-          <motion.button
-            variants={fadeUp}
-            onClick={onCTA}
-            className="mt-10 rounded-full text-lg font-bold px-8 py-4"
-            style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            אני רוצה שזה יהיה הריקוד שלנו ←
-          </motion.button>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   NEW SECTION — THE SECRET
-───────────────────────────────────────────── */
-function TheSecretSection({ onCTA }: { onCTA: () => void }) {
-  return (
-    <section className="section-py px-4 relative overflow-hidden" style={{ background: "#120b1a" }}>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.07) 0%, transparent 65%)" }}
-      />
-
-      <div className="relative max-w-2xl mx-auto text-center">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
+        <div
+          className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-20"
+        >
+          {/* Tag */}
           <motion.div
-            variants={fadeUp}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold mb-8"
-            style={{ background: "rgba(212,175,55,0.12)", border: "1px solid rgba(212,175,55,0.35)", color: "#D4AF37" }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300 text-sm font-medium mb-10"
           >
-            🤫 הסוד שלכם
+            <span>🕺</span>
+            <span>Party Time — מסלול מיוחד לגרושים</span>
           </motion.div>
 
-          <motion.h2 variants={fadeUp} className="font-serif font-black text-3xl md:text-5xl text-cream-DEFAULT leading-tight mb-8">
-            איש לא ידע.
-            <br />
-            <span className="gold-shimmer">הכל ייראה טבעי.</span>
-          </motion.h2>
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.1 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight mb-8"
+          >
+            <span className="block text-white">אתה לא עומד בצד</span>
+            <span className="block text-white">כי אתה ביישן.</span>
+            <span
+              className="block mt-3"
+              style={{
+                background: "linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #60a5fa 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              פשוט שכחת
+            </span>
+            <span
+              style={{
+                background: "linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #60a5fa 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              איך להשתחרר.
+            </span>
+          </motion.h1>
 
-          <motion.div variants={stagger} className="space-y-4 mb-10">
-            {[
-              { icon: "🙅", text: "לא צריך אלכוהול כדי להשתחרר — השחרור הוא אמיתי, מהגוף." },
-              { icon: "👀", text: "אף אחד לא ידע שהייתם בתהליך. לא חבר, לא הורה, לא מישהו בחתונה." },
-              { icon: "✅", text: "זה ייראה כאילו תמיד ידעתם לרקוד — כי הגוף שלכם ילמד לנוע ממקום אמיתי." },
-              { icon: "🎉", text: "גם ייראה טוב — גם תהנו. שניהם. באותו לילה. בלי להתפשר על אף אחד." },
-            ].map(({ icon, text }) => (
-              <motion.div
-                key={icon}
-                variants={fadeUp}
-                className="glass-card p-5 flex gap-4 items-start text-right"
-              >
-                <span className="text-2xl flex-shrink-0">{icon}</span>
-                <p className="text-cream-muted leading-relaxed">{text}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* joseph.jpg — the freedom visual */}
-          <motion.div variants={fadeUp} className="relative rounded-full overflow-hidden mx-auto mb-8" style={{ width: 200, height: 200 }}>
-            <img
-              src="/images/joseph.jpg"
-              alt="חופשי על הרחבה"
-              className="w-full h-full object-cover object-top"
-            />
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{ border: "2px solid rgba(212,175,55,0.5)" }}
-            />
-          </motion.div>
-
+          {/* Sub */}
           <motion.p
-            variants={fadeUp}
-            className="font-serif text-xl md:text-2xl text-cream-DEFAULT font-bold mb-8 leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.35 }}
+            className="text-lg md:text-xl text-gray-400 mb-12 leading-relaxed max-w-xl mx-auto"
           >
-            זה לא ריקוד שלמדתם.
+            גם אם אין לך קורדינציה.
             <br />
-            <span className="text-gold">זה מי שאתם — כשאתם משוחררים.</span>
+            גם אם מעולם לא רקדת.
+            <br />
+            גם אם שתית עד עכשיו רק כדי לעמוד שם.
           </motion.p>
 
-          <motion.button
-            variants={fadeUp}
-            onClick={onCTA}
-            className="rounded-full text-lg font-bold px-8 py-4"
-            style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.55 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-14"
           >
-            אני רוצה את הסוד הזה ←
-          </motion.button>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   SECTION 6A — TEXT TESTIMONIALS
-───────────────────────────────────────────── */
-function TextTestimonialsSection() {
-  const testimonials = [
-    {
-      quote: "הגענו כשאחד מאיתנו כבר חרד מהמחשבה על הריקוד. יצאנו עם ריקוד שגרם לאורחים לבכות מרגש. זה היה הרגע הכי יפה בחתונה.",
-      name: "מיכל ועמית",
-      emoji: "💑",
-    },
-    {
-      quote: "לא האמנתי שאני יכול לרקוד. ממש לא. יוסף לא לימד אותי צעדים — הוא שחרר אותי. בחתונה שלנו רקדתי בלי לחשוב על כלום.",
-      name: "דניאל, חתן",
-      emoji: "🕺",
-    },
-    {
-      quote: "המורה לריקוד הקודמת שלנו גרמה לי להרגיש יותר מגושמת. יוסף גרם לי להרגיש שאני פשוט... אני. וזה עבד.",
-      name: "שירה, כלה",
-      emoji: "👰",
-    },
-  ];
-
-  return (
-    <section className="section-py px-4" style={{ background: "#1e1330" }}>
-      <div className="max-w-5xl mx-auto">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-10 text-center">
-            מה אמרו זוגות אחרים?
-          </motion.h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <motion.div key={t.name} variants={fadeUp} className="glass-card p-6 flex flex-col gap-4">
-                <div className="text-3xl">{t.emoji}</div>
-                <p className="text-cream-muted italic leading-relaxed text-right flex-1">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="gold-divider" />
-                <p className="text-gold font-semibold text-right text-sm">— {t.name}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   SECTION 6B — VIDEO TESTIMONIALS
-───────────────────────────────────────────── */
-const vimeoTestimonials = [
-  { id: "936641367", title: "עדות 1" },
-  { id: "925087288", title: "עדות 2" },
-  { id: "911813704", title: "עדות 3" },
-];
-
-const youtubeShorts = [
-  { id: "lrzp9sOfX9c", title: "עדות 4" },
-  { id: "5FeL-xoGiRs", title: "עדות 5" },
-  { id: "i4zqwplsDwY", title: "עדות 6" },
-  { id: "4gT3M4YBd4w", title: "עדות 7" },
-];
-
-function VideoTestimonialsSection() {
-  return (
-    <section className="section-py px-4" style={{ background: "#120b1a" }}>
-      <div className="max-w-5xl mx-auto">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-2 text-center">
-            תראו בעצמכם מה קורה כשמשתחררים
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-cream-muted text-center mb-10">
-            לא סיפורים. אנשים אמיתיים.
-          </motion.p>
-
-          <motion.div variants={stagger} className="grid md:grid-cols-3 gap-5 mb-8">
-            {vimeoTestimonials.map(({ id, title }) => (
-              <motion.div key={id} variants={fadeUp}>
-                <div
-                  className="video-wrapper"
-                  style={{ border: "1px solid rgba(212,175,55,0.2)", borderRadius: 12, overflow: "hidden" }}
-                >
-                  <iframe
-                    src={`https://player.vimeo.com/video/${id}`}
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    allowFullScreen
-                    title={title}
-                  />
-                </div>
-              </motion.div>
-            ))}
+            <a
+              href="#tracks"
+              className="px-9 py-4 rounded-full font-bold text-xl text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+              style={{
+                background: "linear-gradient(135deg, #7c3aed, #ec4899)",
+                boxShadow: "0 0 30px rgba(124,58,237,0.35)",
+              }}
+            >
+              🔥 אני רוצה להשתחרר
+            </a>
+            <a
+              href="#tracks"
+              className="px-9 py-4 rounded-full font-semibold text-xl text-white border border-violet-500/40 bg-white/[0.04] hover:bg-white/[0.08] transition-all duration-300"
+            >
+              ⚡ אני רוצה גם להכיר נשים
+            </a>
           </motion.div>
 
-          <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {youtubeShorts.map(({ id, title }) => (
-              <motion.div key={id} variants={fadeUp}>
-                <div
-                  className="shorts-wrapper"
-                  style={{ border: "1px solid rgba(212,175,55,0.2)", borderRadius: 12, overflow: "hidden" }}
-                >
-                  <iframe
-                    src={`https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={title}
-                  />
-                </div>
-              </motion.div>
-            ))}
+          {/* Social proof */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.9 }}
+            className="flex items-center justify-center gap-6 text-gray-600 text-sm flex-wrap"
+          >
+            <span>✦ 14+ שנות ניסיון</span>
+            <span>✦ מאות גברים עברו את התהליך</span>
+            <span>✦ שיטת "תנועה יוצרת מציאות"</span>
           </motion.div>
+        </div>
+
+        {/* Scroll arrow */}
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-700 text-2xl"
+        >
+          ↓
         </motion.div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-/* ─────────────────────────────────────────────
-   SECTION 7 — PACKAGES
-───────────────────────────────────────────── */
-const packages = [
-  {
-    name: "דיגיטלי",
-    price: "197",
-    tagline: "להתחיל לבד, בקצב שלכם",
-    features: [
-      "קורס וידאו מלא לשחרור ברחבה",
-      "שחרור לכל סגנון מוזיקה",
-      "גישה מיידית ולצמיתות",
-    ],
-    cta: "אני רוצה את זה ←",
-    featured: false,
-    checkoutUrl: "/checkout/digital",
-  },
-  {
-    name: "דיגיטלי + שיעור פרטי",
-    price: "970",
-    tagline: "קורס + מגע אישי",
-    features: [
-      "קורס דיגיטלי מלא",
-      "שיעור פרטי אחד עם יוסף",
-      "מותאם לכם כזוג",
-    ],
-    cta: "בואו נתחיל ←",
-    featured: false,
-    checkoutUrl: "/checkout/basic",
-  },
-  {
-    name: "דיגיטלי + 2 שיעורים",
-    price: "1,500",
-    tagline: "כשרוצים לבוא מוכנים",
-    features: [
-      "קורס דיגיטלי מלא",
-      "2 שיעורים פרטיים עם יוסף",
-      "זמן אמיתי לבנות יחד את הריקוד",
-    ],
-    cta: "זה המסלול שלנו ←",
-    featured: false,
-    checkoutUrl: "/checkout/standard",
-  },
-  {
-    name: "החבילה המלאה",
-    price: "2,600",
-    tagline: "מהפחד — לריקוד שיזכרו",
-    features: [
-      "קורס דיגיטלי מלא",
-      "4 מפגשים פרטיים עם יוסף",
-      "הרכבת ריקוד הסלואו המלא שלכם",
-      "שחרור לכל סגנון — כל הלילה",
-      "ליווי וואטסאפ 30 יום לתרגול",
-      "נכנסים לחתונה מוכנים ומשוחררים",
-    ],
-    cta: "אני רוצה את הריקוד המלא ←",
-    featured: true,
-    badge: "⭐ הכי פופולרי",
-    checkoutUrl: "/checkout/full",
-  },
-];
-
-function PackagesSection() {
-  return (
-    <section className="section-py px-4" style={{ background: "#1e1330" }}>
-      <div className="max-w-5xl mx-auto">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-2 text-center">
-            בחרו את המסלול שמתאים לכם
-          </motion.h2>
-          <motion.p variants={fadeUp} className="text-cream-muted text-center mb-8">
-            כל מסלול מוביל לאותו מקום — רחבה, חופשיים, ביחד
-          </motion.p>
-
-          {/* digital.png — course mockup */}
-          <motion.div variants={fadeUp} className="flex justify-center mb-10">
-            <div className="relative">
-              <img
-                src="/images/digital.png"
-                alt="קורס Party Time הדיגיטלי"
-                className="rounded-2xl object-cover"
-                style={{ maxHeight: 220, maxWidth: 340 }}
-              />
-              <div
-                className="absolute inset-0 rounded-2xl"
-                style={{ border: "1px solid rgba(212,175,55,0.3)" }}
-              />
-            </div>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
-            {packages.map((pkg) => (
-              <motion.div
-                key={pkg.name}
-                variants={fadeUp}
-                className={`flex flex-col p-6 h-full relative ${pkg.featured ? "glass-card-featured" : "glass-card"}`}
+      {/* ── METHOD VIDEO ──────────────────────────────────────────────────── */}
+      <section className="py-20 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#06060f] via-violet-950/10 to-[#06060f]" />
+        <div className="relative max-w-4xl mx-auto">
+          <FadeIn className="text-center mb-10">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-sm font-medium mb-4">
+              לפני שאתה מחליט — תראה איך זה עובד
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold leading-tight">
+              השיטה והתהליך —
+              <span
+                className="block"
+                style={{
+                  background: "linear-gradient(90deg, #a855f7, #ec4899)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
               >
-                {pkg.badge && (
-                  <div
-                    className="absolute -top-3 right-1/2 translate-x-1/2 text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap"
-                    style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
-                  >
-                    {pkg.badge}
-                  </div>
-                )}
+                בהסבר של יוסף
+              </span>
+            </h2>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <VimeoCard id="915204254" large />
+          </FadeIn>
+        </div>
+      </section>
 
-                <p className={`text-sm font-semibold mb-1 ${pkg.featured ? "text-gold" : "text-cream-muted"}`}>
-                  {pkg.tagline}
-                </p>
-                <h3 className="font-serif font-bold text-cream-DEFAULT text-lg mb-3">{pkg.name}</h3>
-                <div className="mb-4">
-                  <span className="font-black text-3xl text-cream-DEFAULT">{pkg.price}</span>
-                  <span className="text-cream-muted text-sm mr-1">₪</span>
-                </div>
+      {/* ── YOSEF INTRO VIDEO ─────────────────────────────────────────────── */}
+      <section className="py-20 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#06060f] via-violet-950/10 to-[#06060f]" />
+        <div className="relative max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            {/* Phone frame */}
+            <FadeIn className="flex-shrink-0 flex justify-center w-full md:w-auto">
+              <div
+                className="relative rounded-[2.5rem] overflow-hidden border-4 border-white/10 shadow-2xl"
+                style={{
+                  width: 280,
+                  aspectRatio: "9/16",
+                  boxShadow: "0 0 60px rgba(124,58,237,0.3), 0 30px 60px rgba(0,0,0,0.6)",
+                }}
+              >
+                <iframe
+                  src="https://www.youtube.com/embed/XaxueBVfeW4?rel=0&modestbranding=1&playsinline=1"
+                  className="absolute inset-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+            </FadeIn>
 
-                <ul className="space-y-2 flex-1 mb-6 text-right">
-                  {pkg.features.map((f) => (
-                    <li key={f} className="flex gap-2 items-start text-sm text-cream-muted">
-                      <span className="text-gold mt-0.5 flex-shrink-0">✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <motion.a
-                  href={pkg.checkoutUrl}
-                  className="w-full rounded-xl py-3 font-bold text-sm block text-center"
-                  style={
-                    pkg.featured
-                      ? { background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }
-                      : { background: "rgba(212,175,55,0.15)", border: "1px solid rgba(212,175,55,0.4)", color: "#D4AF37" }
-                  }
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+            {/* Text */}
+            <FadeIn delay={0.2} className="text-right flex-1">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-sm font-medium mb-5">
+                תראה בעצמך
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-5 leading-snug">
+                זה לא על ריקוד.
+                <span
+                  className="block"
+                  style={{
+                    background: "linear-gradient(90deg, #a855f7, #ec4899)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
                 >
-                  {pkg.cta}
-                </motion.a>
-              </motion.div>
+                  זה על לחזור לחיות.
+                </span>
+              </h2>
+              <p className="text-gray-400 text-xl leading-relaxed mb-6">
+                יוסף לא מלמד צעדים.
+                <br />
+                הוא מחזיר לגברים את הגוף שלהם — ואיתו את הביטחון, הנוכחות, והאנרגיה שמושכת.
+              </p>
+              <a
+                href="#tracks"
+                className="inline-block px-7 py-3.5 rounded-full font-bold text-white transition-all duration-300 hover:scale-105"
+                style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+              >
+                אני רוצה את זה →
+              </a>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PAIN SECTION ──────────────────────────────────────────────────── */}
+      <section className="py-28 px-6">
+        <div className="max-w-3xl mx-auto">
+          <SectionHeader
+            tag="מכיר את הסיפור הזה?"
+            title={
+              <>
+                כי אנחנו שמענו אותו
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, #a855f7, #ec4899)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  {" "}מאות פעמים.
+                </span>
+              </>
+            }
+            sub="זה לא בגלל שאתה בעייתי. זה בגלל שאחרי גירושים הגוף שוכח דברים."
+          />
+          <div className="space-y-3">
+            {painPoints.map((point, i) => (
+              <FadeIn key={i} delay={i * 0.08}>
+                <div className="flex items-center gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-pink-500/20 transition-all duration-300 group">
+                  <span className="text-pink-500 text-xl flex-shrink-0 group-hover:scale-110 transition-transform">✗</span>
+                  <p className="text-gray-300 text-lg">{point}</p>
+                </div>
+              </FadeIn>
             ))}
           </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
+        </div>
+      </section>
 
-/* ─────────────────────────────────────────────
-   SECTION 8 — AUTHORITY
-───────────────────────────────────────────── */
-function AuthoritySection({ onCTA }: { onCTA: () => void }) {
-  return (
-    <section className="section-py px-4" style={{ background: "#120b1a" }}>
-      <div className="max-w-3xl mx-auto">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.p variants={fadeUp} className="text-gold text-sm font-semibold tracking-widest uppercase mb-3 text-center">
-            מי מלווה אתכם
-          </motion.p>
-          <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-10 text-center">
-            מי זה יוסף אלון?
-          </motion.h2>
+      {/* ── WHO IS THIS FOR ───────────────────────────────────────────────── */}
+      <section className="py-28 px-6">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn className="text-center mb-14">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-300 text-sm font-medium mb-4">
+              רגע לפני שאתה חושב "זה לא בשבילי"
+            </span>
+            <h2 className="text-3xl md:text-5xl font-bold leading-tight">
+              עבדתי עם הגברים
+              <span
+                className="block"
+                style={{
+                  background: "linear-gradient(90deg, #ec4899, #a855f7)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                הביישנים ביותר שיש.
+              </span>
+            </h2>
+          </FadeIn>
 
-          <motion.div variants={fadeUp} className="glass-card p-8">
-            <div className="flex flex-col md:flex-row gap-8 items-start">
+          <div className="grid md:grid-cols-2 gap-4 mb-10">
+            {[
+              { icon: "🚫", text: "מעולם לא רקדו בחיים" },
+              { icon: "🚫", text: "חסרי קורדינציה לחלוטין" },
+              { icon: "🚫", text: "שתו כדי לעמוד ברחבה" },
+              { icon: "🚫", text: "רקדו — אבל מעולם לא הרגישו משוחררים" },
+            ].map((item, i) => (
+              <FadeIn key={i} delay={i * 0.08}>
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+                  <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                  <p className="text-gray-300 text-lg">{item.text}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
 
-              {/* Joseph photo + stats */}
-              <div className="flex flex-col items-center gap-5 flex-shrink-0">
-                <div className="relative rounded-2xl overflow-hidden" style={{ width: 160, height: 180 }}>
-                  <img
+          <FadeIn delay={0.4}>
+            <div
+              className="p-8 rounded-3xl text-center"
+              style={{
+                background: "linear-gradient(135deg, rgba(124,58,237,0.12), rgba(236,72,153,0.08))",
+                border: "1px solid rgba(124,58,237,0.25)",
+              }}
+            >
+              <p className="text-white text-2xl font-bold mb-4">כולם יצאו אחרת.</p>
+              <p className="text-gray-300 text-lg leading-relaxed mb-4">
+                כי לא מלמד צעדים.
+                <br />
+                <span className="text-white font-semibold">מטפל תנועתי</span> שמתאים לך אישית
+                את התנועות שמחמיאות לגוף שלך.
+                <br />
+                ועוזר לך להשתחרר ממקום אמיתי — לא טכני.
+              </p>
+              <div
+                className="inline-flex items-center gap-3 px-5 py-3 rounded-full text-sm font-semibold"
+                style={{
+                  background: "rgba(236,72,153,0.12)",
+                  border: "1px solid rgba(236,72,153,0.25)",
+                  color: "#f9a8d4",
+                }}
+              >
+                <span>✨</span>
+                <span>ועוד משהו שגברים לא מצפים לו — הם מפסיקים להיות תלויים באלכוהול כדי להרגיש בנוח ברחבה.</span>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── WHY SECTION ───────────────────────────────────────────────────── */}
+      <section className="py-28 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/15 to-transparent" />
+        <div className="relative max-w-3xl mx-auto">
+          <FadeIn className="text-center mb-12">
+            <span className="text-6xl block mb-6">🧠</span>
+            <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
+              זה לא שאתה ביישן.
+              <br />
+              <span
+                style={{
+                  background: "linear-gradient(90deg, #a855f7, #ec4899)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                הגוף שלך שכח שמותר לו ליהנות.
+              </span>
+            </h2>
+          </FadeIn>
+
+          <div className="space-y-5 text-right">
+            {[
+              "אחרי גירושים, הגוף עובר משהו שהראש לא תמיד מבין.",
+              "שנים של מתח, ריחוק, כאב — הגוף למד להיות שקוף. לא לקחת מקום. לא לבלוט. לא להרגיש.",
+              "ואז אתה מגיע לחתונה, רוצה ליהנות — והגוף פשוט לא מגיב.",
+            ].map((text, i) => (
+              <FadeIn key={i} delay={i * 0.15}>
+                <p className="text-gray-300 text-xl leading-relaxed">{text}</p>
+              </FadeIn>
+            ))}
+            <FadeIn delay={0.5}>
+              <p className="text-white font-bold text-2xl pt-4 pb-2">
+                הבשורה: הגוף לא שבור. הוא רק שכח.
+              </p>
+              <p className="text-gray-300 text-xl leading-relaxed">
+                ואפשר להחזיר אותו — לא דרך טריקים אלא דרך תנועה. דרך חוויה. דרך גוף שחוזר לעצמו.
+              </p>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── METHOD SECTION ────────────────────────────────────────────────── */}
+      <section className="py-28 px-6">
+        <div className="max-w-5xl mx-auto">
+          <SectionHeader
+            tag="מטפל תנועתי | 14 שנות ניסיון"
+            title={
+              <>
+                לא מלמד צעדים.
+                <br />
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, #a855f7, #60a5fa)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  מחבר אותך לגוף שלך.
+                </span>
+              </>
+            }
+            sub="תנועות שמחמיאות לך. שחרור שבא מבפנים. שינוי שנשאר."
+          />
+          <div className="grid md:grid-cols-3 gap-6">
+            {methodSteps.map((step, i) => (
+              <FadeIn key={i} delay={i * 0.15}>
+                <div className="p-7 rounded-3xl bg-white/[0.025] border border-white/[0.06] text-right hover:border-violet-500/30 transition-all duration-300 h-full">
+                  <div className="text-5xl mb-5">{step.icon}</div>
+                  <div className="text-xs text-violet-400 font-semibold tracking-widest uppercase mb-2">
+                    שלב {i + 1}
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                  <p className="text-gray-400 text-lg leading-relaxed">{step.desc}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── YOSEF SECTION ─────────────────────────────────────────────────── */}
+      <section className="py-28 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/10 to-transparent" />
+        <div className="relative max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-14 items-center">
+            {/* Photo */}
+            <FadeIn>
+              <div className="relative">
+                <div
+                  className="absolute inset-0 rounded-3xl"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(124,58,237,0.3), rgba(236,72,153,0.2))",
+                    filter: "blur(40px)",
+                    transform: "scale(0.9)",
+                  }}
+                />
+                <div className="relative rounded-3xl overflow-hidden border border-violet-500/20">
+                  <Image
                     src="/images/joseph.jpg"
                     alt="יוסף אלון"
-                    className="w-full h-full object-cover object-top"
+                    width={500}
+                    height={620}
+                    className="w-full object-cover"
+                    priority
                   />
-                  <div
-                    className="absolute inset-0 rounded-2xl"
-                    style={{ border: "2px solid rgba(212,175,55,0.4)" }}
-                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06060f]/60 to-transparent" />
                 </div>
-                <div className="flex md:flex-col gap-6 text-center">
-                  {[
-                    { num: "14", label: "שנות ניסיון" },
-                    { num: "מאות", label: "זוגות ולקוחות" },
-                  ].map(({ num, label }) => (
-                    <div key={label}>
-                      <div className="font-serif font-black text-3xl text-gold">{num}</div>
-                      <div className="text-cream-muted text-xs mt-0.5">{label}</div>
+              </div>
+            </FadeIn>
+
+            {/* Text */}
+            <FadeIn delay={0.2} className="space-y-6">
+              <span className="inline-block px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-sm">
+                14+ שנות ניסיון
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold">יוסף אלון</h2>
+              <p className="text-gray-400 text-xl leading-relaxed">
+                מייסד Passion For Action ויוצר שיטת{" "}
+                <span className="text-white font-semibold">"תנועה יוצרת מציאות"</span>.
+              </p>
+              <div className="space-y-4 text-gray-300 text-lg leading-relaxed">
+                <p>
+                  לא מלמד צעדי ריקוד. מחבר בין תנועה, שפת גוף, ביטחון עצמי וזוגיות.
+                </p>
+                <p>
+                  מאות גברים עברו איתו תהליך שהחזיר להם את הגוף — ואיתו את הביטחון, הנוכחות, והחיים.
+                </p>
+                <p>
+                  גבר שלא עבר דייט ראשון — תוך שבוע וחצי הגיע לדייט מוצלח.
+                  תלמידים שהגיעו עם פחד לרקוד — בתוך כמה מפגשים הרגישו חופשיים.
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 pt-2">
+                {[
+                  { num: "14+", label: "שנות ניסיון" },
+                  { num: "500+", label: "לקוחות" },
+                  { num: "100%", label: "שינוי גופני" },
+                ].map((stat, i) => (
+                  <div
+                    key={i}
+                    className="text-center p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05]"
+                  >
+                    <div
+                      className="text-2xl font-bold"
+                      style={{
+                        background: "linear-gradient(90deg, #a855f7, #ec4899)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}
+                    >
+                      {stat.num}
                     </div>
+                    <div className="text-xs text-gray-500 mt-1">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CHANNEL 12 ────────────────────────────────────────────────────── */}
+      <section className="py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn className="text-center mb-10">
+            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 text-sm font-semibold mb-5">
+              <span>📺</span>
+              <span>כפי שנראה בתוכנית הבוקר של ערוץ 12 עם פאולה וליאון</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold leading-tight">
+              כשערוץ 12 רוצים להסביר
+              <span
+                className="block"
+                style={{
+                  background: "linear-gradient(90deg, #fbbf24, #f59e0b)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                מה זה לרקוד מהגוף — הם קוראים ליוסף.
+              </span>
+            </h2>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <div
+              className="relative rounded-3xl overflow-hidden"
+              style={{ boxShadow: "0 0 60px rgba(251,191,36,0.15), 0 30px 60px rgba(0,0,0,0.5)" }}
+            >
+              <div className="aspect-video relative">
+                <iframe
+                  src="https://www.youtube.com/embed/7EvPgvnjohM?rel=0&modestbranding=1"
+                  className="absolute inset-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── MEDIA APPEARANCES ─────────────────────────────────────────────── */}
+      <section className="py-16 px-6">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn className="text-center mb-8">
+            <p className="text-gray-500 text-sm font-semibold tracking-widest uppercase mb-3">כפי שנראה ב</p>
+            <div className="flex flex-wrap justify-center items-center gap-4 text-gray-600 text-sm font-bold mb-8">
+              <span className="px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">רשת 13</span>
+              <span className="text-white/20">·</span>
+              <span className="px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">ערוץ 14</span>
+              <span className="text-white/20">·</span>
+              <span className="px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">קשת 12</span>
+              <span className="text-white/20">·</span>
+              <span className="px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">102FM</span>
+              <span className="text-white/20">·</span>
+              <span className="px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">רדיו תל אביב</span>
+            </div>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <div
+              className="relative rounded-3xl overflow-hidden border border-white/[0.07]"
+              style={{ boxShadow: "0 0 50px rgba(124,58,237,0.1)" }}
+            >
+              <Image
+                src="/images/tv.jpg"
+                alt="יוסף אלון בתוכניות הטלוויזיה — רשת, ערוץ 14, קשת, 102FM"
+                width={1200}
+                height={700}
+                className="w-full h-56 md:h-72 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#06060f]/80 via-transparent to-transparent" />
+              <div className="absolute bottom-6 right-8 text-right">
+                <p className="text-white font-bold text-lg md:text-xl">
+                  כשרוצים להסביר איך גבר משתחרר ברחבה —
+                </p>
+                <p className="text-violet-300 font-semibold text-base mt-1">מזמינים את יוסף.</p>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── COURSE PREVIEW ────────────────────────────────────────────────── */}
+      <section className="py-28 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/10 to-transparent" />
+        <div className="relative max-w-4xl mx-auto">
+          <SectionHeader
+            tag="הצצה לפנים"
+            title={
+              <>
+                מה תמצא ב-
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, #a855f7, #ec4899)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  PARTY TIME SOS
+                </span>
+              </>
+            }
+            sub="הצצה למה שקורה בקורס — לפני שאתה מחליט"
+          />
+          <FadeIn>
+            <VimeoCard id={COURSE_PREVIEW_ID} large />
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── TRACKS ────────────────────────────────────────────────────────── */}
+      <section id="tracks" className="py-28 px-6">
+        <div className="max-w-6xl mx-auto">
+          <SectionHeader
+            tag="המסלולים"
+            title={
+              <>
+                בחר איפה אתה עכשיו —
+                <br />
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, #a855f7, #ec4899)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  ולאן אתה רוצה להגיע.
+                </span>
+              </>
+            }
+          />
+
+          <div className="grid md:grid-cols-3 gap-6 items-stretch">
+            {tracks.map((track, i) => (
+              <FadeIn key={track.id} delay={i * 0.12} className="h-full">
+                <div
+                  className={`relative flex flex-col h-full p-7 rounded-3xl bg-gradient-to-b ${track.gradient} border ${track.border} transition-all duration-300 hover:scale-[1.02]`}
+                  style={{
+                    boxShadow: `0 0 40px ${track.glow}`,
+                  }}
+                >
+                  {track.tag && (
+                    <div
+                      className="absolute -top-3.5 right-6 px-4 py-1.5 rounded-full text-sm font-bold text-white"
+                      style={{
+                        background: "linear-gradient(90deg, #7c3aed, #ec4899)",
+                      }}
+                    >
+                      {track.tag}
+                    </div>
+                  )}
+
+                  <div className="text-4xl mb-3">{track.emoji}</div>
+                  <div className="text-sm text-gray-400 mb-1">{track.subtitle}</div>
+                  <h3 className="text-2xl font-bold mb-2">{track.name}</h3>
+                  <p className="text-gray-400 text-sm mb-5 leading-relaxed">{track.description}</p>
+
+                  <div className="text-4xl font-extrabold mb-6 text-white">
+                    ₪{track.price}
+                  </div>
+
+                  <ul className="space-y-3 flex-1 mb-8">
+                    {track.features.map((f, j) => (
+                      <li key={j} className="flex items-start gap-3 text-gray-300 text-sm">
+                        <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <a
+                    href={waLink(track.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center py-4 px-6 rounded-2xl font-bold text-lg text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                    style={{
+                      background: "linear-gradient(135deg, #7c3aed, #ec4899)",
+                    }}
+                  >
+                    {track.cta} →
+                  </a>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+
+          <FadeIn delay={0.3} className="mt-14">
+            <div className="relative rounded-3xl overflow-hidden border border-pink-500/20" style={{ boxShadow: "0 0 50px rgba(236,72,153,0.12)" }}>
+              <Image
+                src="/images/dancingwithgirl.png"
+                alt="זוג רוקד במסיבה"
+                width={1200}
+                height={480}
+                className="w-full h-64 md:h-80 object-cover object-center"
+              />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to left, rgba(6,6,15,0.85) 0%, rgba(6,6,15,0.5) 50%, rgba(6,6,15,0.2) 100%)" }} />
+              <div className="absolute inset-0 flex items-center justify-end px-10">
+                <div className="text-right max-w-sm">
+                  <p className="text-white font-extrabold text-2xl md:text-3xl leading-tight mb-3">
+                    זה לא חלום.
+                    <br />
+                    זו התוצאה שמחכה לך.
+                  </p>
+                  <p className="text-gray-300 text-base">הרחבה שהיית בה פחדן — תהפוך למקום שאתה הכי עצמך בו.</p>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.4} className="text-center mt-10">
+            <p className="text-gray-600 text-sm">
+              לא בטוח איזה מסלול מתאים לך?{" "}
+              <a
+                href={waLink("ייעוץ — לא יודע איזה מסלול")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-violet-400 underline hover:text-violet-300"
+              >
+                כתוב ליוסף בוואטסאפ — הוא יעזור לך לבחור.
+              </a>
+            </p>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
+      <section className="py-28 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-pink-950/10 to-transparent" />
+        <div className="relative max-w-5xl mx-auto">
+          <SectionHeader
+            tag="עדויות"
+            title={
+              <>
+                מה אומרים הגברים
+                <br />
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, #ec4899, #a855f7)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  שעברו את זה.
+                </span>
+              </>
+            }
+            sub="לא עדויות מומצאות. סיפורים אמיתיים."
+          />
+
+          {/* Featured testimonial */}
+          <FadeIn className="mb-10">
+            <div className="relative">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeT}
+                  initial={{ opacity: 0, x: 60 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -60 }}
+                  transition={{ duration: 0.45 }}
+                  className="p-8 md:p-10 rounded-3xl bg-white/[0.03] border border-white/[0.08]"
+                >
+                  <StarRating stars={testimonials[activeT].stars} />
+                  <p className="text-xl md:text-2xl text-gray-200 leading-relaxed mt-6 mb-8 text-right">
+                    &ldquo;{testimonials[activeT].text}&rdquo;
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+                    >
+                      {testimonials[activeT].name[0]}
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">{testimonials[activeT].name}</div>
+                      <div className="text-gray-500 text-sm">
+                        {testimonials[activeT].age}, {testimonials[activeT].city} ·{" "}
+                        {testimonials[activeT].track}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Nav */}
+              <div className="flex items-center justify-center gap-6 mt-6">
+                <button
+                  onClick={prevT}
+                  className="w-10 h-10 rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/10 transition-colors flex items-center justify-center text-gray-400"
+                >
+                  →
+                </button>
+                <div className="flex gap-2">
+                  {testimonials.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveT(i)}
+                      className="rounded-full transition-all duration-300"
+                      style={{
+                        width: i === activeT ? 28 : 8,
+                        height: 8,
+                        background:
+                          i === activeT
+                            ? "linear-gradient(90deg, #7c3aed, #ec4899)"
+                            : "rgba(255,255,255,0.2)",
+                      }}
+                    />
                   ))}
                 </div>
-              </div>
-
-              <div className="hidden md:block w-px self-stretch" style={{ background: "rgba(212,175,55,0.3)" }} />
-
-              <div className="text-right space-y-4 text-cream-muted leading-relaxed">
-                <p>
-                  יוסף אלון הוא מייסד{" "}
-                  <span className="text-cream-DEFAULT font-semibold">Passion For Action</span> —
-                  המרכז להעצמה אישית דרך תנועה.
-                </p>
-                <p>
-                  הוא לא מלמד ריקוד. הוא משנה את האופן שבו אנשים מרגישים בגוף שלהם — על הרחבה, בכל סגנון, בכל שיר.
-                </p>
-                <p>
-                  המתודולוגיה שלו,{" "}
-                  <span className="text-gold italic">&ldquo;תנועה יוצרת מציאות&rdquo;</span>,
-                  מבוססת על שנים של עבודה עם אנשים שאמרו בדיוק מה שאתם אומרים עכשיו:
-                </p>
-                <p className="quote-text text-lg font-semibold text-cream-DEFAULT">
-                  &ldquo;אני לא יודע לרקוד.&rdquo;
-                </p>
-                <p className="text-cream-DEFAULT font-medium">
-                  הם לא לא ידעו לרקוד.
-                  <br />
-                  הם פשוט עוד לא שוחררו.
-                </p>
+                <button
+                  onClick={nextT}
+                  className="w-10 h-10 rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/10 transition-colors flex items-center justify-center text-gray-400"
+                >
+                  ←
+                </button>
               </div>
             </div>
-          </motion.div>
+          </FadeIn>
 
-          {/* tv.jpg — media credibility */}
-          <motion.div variants={fadeUp} className="mt-6">
-            <p className="text-cream-muted text-xs text-center mb-3 tracking-widest uppercase">כפי שהוצג ב</p>
-            <div className="relative rounded-2xl overflow-hidden">
-              <img
-                src="/images/tv.jpg"
-                alt="יוסף אלון בתקשורת — רשת, קשת, ערוץ 14, 102FM"
-                className="w-full object-cover rounded-2xl"
-                style={{ maxHeight: 260, objectPosition: "center top" }}
-              />
-              <div
-                className="absolute inset-0 rounded-2xl"
-                style={{ border: "1px solid rgba(212,175,55,0.25)", background: "rgba(18,11,26,0.15)" }}
-              />
-            </div>
-          </motion.div>
+          {/* Grid of all testimonials */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            {testimonials.map((t, i) => (
+              <FadeIn key={i} delay={i * 0.1}>
+                <div
+                  className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] text-right cursor-pointer hover:border-violet-500/20 transition-colors"
+                  onClick={() => setActiveT(i)}
+                >
+                  <StarRating stars={t.stars} />
+                  <p className="text-gray-300 text-sm leading-relaxed my-3">
+                    &ldquo;{t.text.substring(0, 140)}...&rdquo;
+                  </p>
+                  <div className="text-gray-500 text-xs">
+                    {t.name}, {t.age} · {t.track}
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          <motion.div variants={fadeUp} className="mt-8 text-center">
-            <button
-              onClick={onCTA}
-              className="text-gold underline underline-offset-4 hover:text-gold-light transition-colors text-sm"
+      {/* ── VIDEO TESTIMONIALS ────────────────────────────────────────────── */}
+      <section className="py-28 px-6">
+        <div className="max-w-6xl mx-auto">
+          <SectionHeader
+            tag="עדויות וידאו"
+            title={
+              <>
+                שמע מהם
+                <span
+                  style={{
+                    background: "linear-gradient(90deg, #ec4899, #a855f7)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  {" "}ישירות.
+                </span>
+              </>
+            }
+            sub="לחץ על כל סרטון כדי לצפות"
+          />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {videoTestimonialIds.map((id, i) => (
+              <FadeIn key={id} delay={i * 0.07}>
+                <VimeoCard id={id} />
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
+      <section className="py-28 px-6">
+        <div className="max-w-3xl mx-auto">
+          <SectionHeader
+            tag="שאלות נפוצות"
+            title="כל מה שרצית לשאול"
+            sub="בלי עיגולים. תשובות ישרות."
+          />
+
+          <div className="space-y-2">
+            {faqs.map((faq, i) => (
+              <FadeIn key={i} delay={i * 0.05}>
+                <div className="rounded-2xl border border-white/[0.06] overflow-hidden">
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between p-6 text-right hover:bg-white/[0.03] transition-colors"
+                  >
+                    <span className="font-semibold text-lg text-white leading-snug">
+                      {faq.q}
+                    </span>
+                    <motion.span
+                      animate={{ rotate: openFaq === i ? 180 : 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="text-violet-400 flex-shrink-0 mr-4 text-sm"
+                    >
+                      ▼
+                    </motion.span>
+                  </button>
+                  <AnimatePresence>
+                    {openFaq === i && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-6 pb-6 text-right border-t border-white/[0.04] pt-4">
+                          {faq.a === "zoom" ? (
+                            <div className="space-y-4">
+                              <p className="text-gray-400 text-lg leading-relaxed">
+                                המפגשים אחד על אחד הם כדי לעבור תהליך איכותי ומדויק בשבילך.
+                              </p>
+                              <p className="text-gray-400 text-lg leading-relaxed">
+                                אפשרי גם להצטרף למפגשים קבוצתיים בזום.
+                              </p>
+                              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                <a
+                                  href={waLink("מפגשי זום קבוצתיים")}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-5 py-3 rounded-xl text-white text-sm font-bold text-center transition-all duration-300 hover:scale-105"
+                                  style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+                                >
+                                  💬 שלח הודעה ליוסף
+                                </a>
+                                <a
+                                  href="https://passion4action.ravpage.co.il/love%20-%20esti"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-5 py-3 rounded-xl border border-violet-500/40 text-violet-300 text-sm font-bold text-center hover:bg-violet-500/10 transition-all duration-300"
+                                >
+                                  📅 הרשם למפגשי זום →
+                                </a>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-400 text-lg leading-relaxed">{faq.a}</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
+      <section className="py-36 px-6 relative">
+        <div className="absolute inset-0 overflow-hidden">
+          <Image
+            src="/images/man2dance.jpg"
+            alt=""
+            fill
+            className="object-cover object-center opacity-20"
+          />
+          <FloatingOrb x="20%" y="30%" size="500px" color="rgba(124,58,237,0.1)" delay={0} />
+          <FloatingOrb x="60%" y="60%" size="350px" color="rgba(236,72,153,0.08)" delay={3} />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#06060f]/60 via-[#06060f]/40 to-[#06060f]" />
+        </div>
+
+        <div className="relative max-w-3xl mx-auto text-center">
+          <FadeIn>
+            <span className="text-7xl block mb-8">🎆</span>
+            <h2 className="text-4xl md:text-6xl font-extrabold leading-tight mb-6">
+              הגיע הזמן שתחזור
+              <span
+                className="block"
+                style={{
+                  background: "linear-gradient(135deg, #a855f7, #ec4899)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                לגוף שלך.
+              </span>
+            </h2>
+            <p className="text-gray-400 text-xl leading-relaxed mb-12 max-w-xl mx-auto">
+              לא עוד מסיבה שתשתה בה כדי לעמוד שם.
+              <br />
+              לא עוד חתונה שתצא ממנה ריק.
+              <br />
+              <span className="text-white font-semibold">
+                הגיע הזמן שתרגיש את הגוף שלך שוב.
+              </span>
+            </p>
+
+            <a
+              href="#tracks"
+              className="inline-block px-12 py-5 rounded-full font-bold text-2xl text-white transition-all duration-300 hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, #7c3aed, #ec4899)",
+                boxShadow: "0 0 50px rgba(124,58,237,0.4)",
+              }}
             >
-              דברו עם יוסף ישירות ←
-            </button>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
+              🔥 אני רוצה להרגיש את הגוף שלי שוב
+            </a>
 
-/* ─────────────────────────────────────────────
-   SECTION 9 — FINAL CTA (upgraded)
-───────────────────────────────────────────── */
-function FinalCTASection({ onCTA }: { onCTA: () => void }) {
-  return (
-    <section className="section-py px-4 relative overflow-hidden" style={{ background: "#1e1330" }}>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at center, rgba(212,175,55,0.08) 0%, transparent 70%)" }}
-      />
+            <p className="mt-8 text-gray-600 text-sm">
+              שאלות?{" "}
+              <a
+                href={waLink("שאלה כללית")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-violet-400 underline hover:text-violet-300"
+              >
+                כתוב ליוסף ישירות בוואטסאפ
+              </a>
+            </p>
+          </FadeIn>
+        </div>
+      </section>
 
-      <div className="relative max-w-2xl mx-auto text-center">
-        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
-          <motion.h2 variants={fadeUp} className="font-serif font-black text-3xl md:text-5xl text-cream-DEFAULT leading-tight mb-6">
-            החתונה שלכם מגיעה.
-            <br />
-            <span className="gold-shimmer">הריקוד לא חייב להיות הרגע שאתם חוששים ממנו.</span>
-          </motion.h2>
-
-          <motion.div variants={fadeUp} className="text-cream-muted text-lg leading-loose mb-10 space-y-2">
-            <p>הוא יכול להיות הרגע שתספרו עליו שנים.</p>
-            <p>מזרחית, 80s, סלואו, לטיני — כל שיר שיתנגן, תדעו מה לעשות.</p>
-            <p>בלי אלכוהול. בלי ספירות. בלי לחץ.</p>
-            <p>200 אנשים אוהבים יסתכלו עליכם.</p>
-            <p>תרגישו חופשיים.</p>
-            <p>תהיו שם — אחד עם השני.</p>
-            <p className="text-cream-DEFAULT font-bold text-xl mt-2">ותרקדו.</p>
-          </motion.div>
-
-          <motion.button
-            variants={fadeUp}
-            onClick={onCTA}
-            className="rounded-full text-xl font-black px-10 py-5 mb-4 animate-pulse-gold"
-            style={{ background: "linear-gradient(135deg, #c9963f 0%, #D4AF37 100%)", color: "#120b1a" }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.96 }}
+      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
+      <footer className="py-10 px-6 border-t border-white/[0.04]">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-600 text-sm">
+          <div>
+            <p className="font-semibold text-gray-400">Passion For Action | יוסף אלון</p>
+            <p className="mt-1">תנועה יוצרת מציאות</p>
+          </div>
+          <div className="flex gap-6">
+            <a
+              href="https://www.facebook.com/josephalon.pfa/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-violet-400 transition-colors"
+            >
+              פייסבוק
+            </a>
+            <a
+              href="https://www.instagram.com/josephalon_love/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-violet-400 transition-colors"
+            >
+              אינסטגרם
+            </a>
+            <a
+              href="https://www.tiktok.com/@josephalon.pfa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-violet-400 transition-colors"
+            >
+              טיקטוק
+            </a>
+          </div>
+          <p>© {new Date().getFullYear()} כל הזכויות שמורות</p>
+        </div>
+        <div className="max-w-4xl mx-auto mt-6 pt-6 border-t border-white/[0.03] flex justify-center gap-6 text-gray-700 text-xs">
+          <a
+            href="https://passion4action.ravpage.co.il/%20pratiut"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-500 transition-colors"
           >
-            אני רוצה את הרגע הזה — קבע שיחה עם יוסף ←
-          </motion.button>
-
-          <motion.p variants={fadeUp} className="text-cream-muted/60 text-sm">
-            ללא התחייבות — שיחה קצרה כדי להבין מה מתאים לכם
-          </motion.p>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   FOOTER
-───────────────────────────────────────────── */
-function Footer() {
-  return (
-    <footer
-      className="py-8 px-4 text-center text-cream-muted/40 text-sm"
-      style={{ background: "#0d081a", borderTop: "1px solid rgba(212,175,55,0.1)" }}
-    >
-      <p>© {new Date().getFullYear()} Passion For Action | יוסף אלון</p>
-      <p className="mt-1">תנועה יוצרת מציאות</p>
-    </footer>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   STICKY NAV
-───────────────────────────────────────────── */
-function StickyNav({ onCTA }: { onCTA: () => void }) {
-  return (
-    <motion.nav
-      className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3"
-      style={{ background: "rgba(18,11,26,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(212,175,55,0.15)" }}
-      initial={{ y: -60, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.5, duration: 0.5 }}
-    >
-      <span className="font-serif font-bold text-gold text-sm">Passion For Action</span>
-      <button
-        onClick={onCTA}
-        className="rounded-full px-5 py-2 text-sm font-bold"
-        style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
-      >
-        קבע שיחה ←
-      </button>
-    </motion.nav>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   MAIN PAGE
-───────────────────────────────────────────── */
-export default function Page() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<string | undefined>();
-
-  const openModal = (pkg?: string) => {
-    setSelectedPackage(pkg);
-    setModalOpen(true);
-  };
-
-  return (
-    <>
-      <StickyNav onCTA={() => openModal()} />
-
-      <main className="pt-14">
-        <HeroSection onCTA={() => openModal()} />
-
-        <div className="gold-divider" />
-        <PainSection />
-
-        <div className="gold-divider" />
-        <AgitationSection />
-
-        <div className="gold-divider" />
-        <SolutionSection onCTA={() => openModal()} />
-
-        <div className="gold-divider" />
-        <MusicStylesSection />
-
-        <div className="gold-divider" />
-        <HowItWorksSection />
-
-        <div className="gold-divider" />
-        <WeddingResultSection onCTA={() => openModal()} />
-
-        <div className="gold-divider" />
-        <TheSecretSection onCTA={() => openModal()} />
-
-        <div className="gold-divider" />
-        <TextTestimonialsSection />
-
-        <div className="gold-divider" />
-        <VideoTestimonialsSection />
-
-        <div className="gold-divider" />
-        <PackagesSection />
-
-        <div className="gold-divider" />
-        <AuthoritySection onCTA={() => openModal()} />
-
-        <div className="gold-divider" />
-        <FinalCTASection onCTA={() => openModal()} />
-
-        <Footer />
-      </main>
-
-      <LeadModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        packageLabel={selectedPackage}
-      />
-    </>
+            מדיניות פרטיות
+          </a>
+          <span>·</span>
+          <a
+            href="https://passion4action.ravpage.co.il/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-500 transition-colors"
+          >
+            תנאי שימוש
+          </a>
+        </div>
+      </footer>
+    </main>
   );
 }
