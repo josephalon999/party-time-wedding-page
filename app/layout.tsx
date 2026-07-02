@@ -1,32 +1,41 @@
 import type { Metadata } from "next";
-import { Assistant } from "next/font/google";
+import { Assistant, Noto_Serif_Hebrew } from "next/font/google";
 import "./globals.css";
 
 const assistant = Assistant({
-  variable: "--font-assistant",
   subsets: ["hebrew", "latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-assistant",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const notoSerifHebrew = Noto_Serif_Hebrew({
+  subsets: ["hebrew"],
+  variable: "--font-noto-serif",
+  weight: ["400", "600", "700", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Party Time לגרושים | יוסף אלון — Passion For Action",
+  title: "Party Time למתחתנים | ריקוד פתיחה שתזכרו לכל החיים",
   description:
-    "המסלול לגרושים שרוצים להשתחרר ברחבת הריקודים, לבנות ביטחון עצמי — ואולי גם להכיר מישהי. יוסף אלון, 14 שנות ניסיון, שיטת 'תנועה יוצרת מציאות'.",
+    "תהליך לזוגות שרוצים להרגיש חופשיים ומחוברים בריקוד הפתיחה בחתונה — בלי בושה, בלי פחד, עם יוסף אלון | Passion For Action",
   openGraph: {
-    title: "Party Time לגרושים | יוסף אלון",
-    description: "לא עוד חתונה שתעמוד בה בצד. הגיע הזמן שאתה תהיה מישהו שחי.",
+    title: "Party Time למתחתנים | ריקוד פתיחה שתזכרו לכל החיים",
+    description: "200 אנשים אוהבים יסתכלו עליכם. תרגישו חופשיים ברגע הזה.",
     locale: "he_IL",
+    type: "website",
   },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="he" dir="rtl">
-      <body className={`${assistant.variable} antialiased font-sans`}>{children}</body>
+    <html lang="he" dir="rtl" className={`${assistant.variable} ${notoSerifHebrew.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
