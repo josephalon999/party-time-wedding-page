@@ -817,6 +817,7 @@ const youtubeShorts = [
   { id: "5FeL-xoGiRs", title: "עדות 5" },
   { id: "i4zqwplsDwY", title: "עדות 6" },
   { id: "4gT3M4YBd4w", title: "עדות 7" },
+  { id: "2O8CYvZKvw8", title: "עדות 8" },
 ];
 
 function VideoTestimonialsSection() {
@@ -849,7 +850,7 @@ function VideoTestimonialsSection() {
             ))}
           </motion.div>
 
-          <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          <motion.div variants={stagger} className="grid grid-cols-2 md:grid-cols-3 gap-5">
             {youtubeShorts.map(({ id, title }) => (
               <motion.div key={id} variants={fadeUp}>
                 <div
