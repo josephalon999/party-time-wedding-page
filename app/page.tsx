@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 /* ─────────────────────────────────────────────
    ANIMATION VARIANTS
@@ -16,171 +15,15 @@ const stagger = {
   visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 };
 
-/* ─────────────────────────────────────────────
-   LEAD MODAL
-   TODO: החלף את RAVMESAGE_WEBHOOK_URL בכתובת
-   ה-Webhook של קבוצת "דף מכירה פארטי טיים חתן כלה"
-   מתוך חשבון הרב-מסר שלך
-───────────────────────────────────────────── */
-const RAVMESAGE_WEBHOOK_URL = "https://YOUR_RAVMESAGE_WEBHOOK_URL_HERE";
-
-function LeadModal({
-  isOpen,
-  onClose,
-  packageLabel,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  packageLabel?: string;
-}) {
-  const [form, setForm] = useState({ name: "", phone: "", weddingDate: "" });
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus("loading");
-    try {
-      await fetch(RAVMESAGE_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          phone: form.phone,
-          wedding_date: form.weddingDate,
-          group: "דף מכירה פארטי טיים חתן כלה",
-          package: packageLabel || "general",
-          source: "landing-page-wedding",
-        }),
-      });
-      setStatus("success");
-    } catch {
-      setStatus("error");
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={(e) => e.target === e.currentTarget && onClose()}
-        >
-          <motion.div
-            className="relative w-full max-w-md rounded-2xl p-8"
-            style={{ background: "#1e1330", border: "1px solid rgba(212,175,55,0.5)" }}
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92 }}
-          >
-            <button
-              onClick={onClose}
-              className="absolute top-4 left-4 text-cream-muted hover:text-cream-DEFAULT text-2xl leading-none"
-              aria-label="סגור"
-            >
-              ✕
-            </button>
-
-            {status === "success" ? (
-              <div className="text-center py-6">
-                <div className="text-5xl mb-4">🎉</div>
-                <h3 className="font-serif text-2xl text-gold mb-2">קיבלנו!</h3>
-                <p className="text-cream-muted">יוסף יצור איתכם קשר בקרוב לתיאום.</p>
-              </div>
-            ) : (
-              <>
-                <h3 className="font-serif text-2xl font-bold text-gold mb-1 text-center">
-                  {packageLabel ? `בחרתם: ${packageLabel}` : "קבעו שיחה עם יוסף"}
-                </h3>
-                <p className="text-cream-muted text-sm text-center mb-6">
-                  ללא התחייבות — שיחה קצרה להכיר ולהתאים
-                </p>
-
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                  <div>
-                    <label className="block text-sm text-cream-muted mb-1">שם מלא *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      value={form.name}
-                      onChange={handleChange}
-                      placeholder="השם שלכם"
-                      className="w-full rounded-xl px-4 py-3 text-cream-DEFAULT placeholder-cream-muted/50 focus:outline-none focus:ring-2 focus:ring-gold"
-                      style={{ background: "rgba(18,11,26,0.8)", border: "1px solid rgba(212,175,55,0.3)" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-cream-muted mb-1">טלפון *</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder="050-0000000"
-                      className="w-full rounded-xl px-4 py-3 text-cream-DEFAULT placeholder-cream-muted/50 focus:outline-none focus:ring-2 focus:ring-gold"
-                      style={{ background: "rgba(18,11,26,0.8)", border: "1px solid rgba(212,175,55,0.3)" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-cream-muted mb-1">תאריך החתונה (בערך)</label>
-                    <input
-                      type="text"
-                      name="weddingDate"
-                      value={form.weddingDate}
-                      onChange={handleChange}
-                      placeholder="למשל: אוגוסט 2026"
-                      className="w-full rounded-xl px-4 py-3 text-cream-DEFAULT placeholder-cream-muted/50 focus:outline-none focus:ring-2 focus:ring-gold"
-                      style={{ background: "rgba(18,11,26,0.8)", border: "1px solid rgba(212,175,55,0.3)" }}
-                    />
-                  </div>
-
-                  <motion.button
-                    type="submit"
-                    disabled={status === "loading"}
-                    className="w-full rounded-xl py-4 font-bold text-lg mt-2 disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {status === "loading" ? "שולח..." : "אני רוצה את הרגע הזה ←"}
-                  </motion.button>
-
-                  {status === "error" && (
-                    <p className="text-red-400 text-sm text-center">
-                      משהו השתבש. נסו שוב או{" "}
-                      <a
-                        href="https://wa.me/972YOUR_PHONE?text=היי יוסף, ראיתי את דף Party Time למתחתנים ואני מעוניין/ת לשמוע עוד"
-                        className="underline text-gold"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        כתבו ישירות בוואטסאפ
-                      </a>
-                    </p>
-                  )}
-                </form>
-              </>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
 
 /* ─────────────────────────────────────────────
    SECTION 1 — HERO (upgraded)
 ───────────────────────────────────────────── */
-function HeroSection({ onCTA }: { onCTA: () => void }) {
+function scrollToPackages() {
+  document.getElementById("packages")?.scrollIntoView({ behavior: "smooth" });
+}
+
+function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden text-center px-4">
       <div className="absolute inset-0 z-0">
@@ -249,7 +92,7 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
 
         <motion.button
           variants={fadeUp}
-          onClick={onCTA}
+          onClick={scrollToPackages}
           className="rounded-full text-lg md:text-xl font-bold px-8 py-5 transition-all animate-pulse-gold"
           style={{ background: "linear-gradient(135deg, #c9963f 0%, #D4AF37 100%)", color: "#120b1a" }}
           whileHover={{ scale: 1.04 }}
@@ -279,9 +122,8 @@ function HeroSection({ onCTA }: { onCTA: () => void }) {
    SECTION 2 — PAIN (upgraded: adds music fear)
 ───────────────────────────────────────────── */
 function PainSection() {
-  const ref = useRef(null);
   return (
-    <section className="section-py section-gradient-top px-4" ref={ref}>
+    <section className="section-py section-gradient-top px-4">
       <div className="max-w-2xl mx-auto text-center">
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
           <motion.p variants={fadeUp} className="text-gold text-sm font-semibold tracking-widest uppercase mb-3">
@@ -401,7 +243,7 @@ function AgitationSection() {
 /* ─────────────────────────────────────────────
    SECTION 4 — SOLUTION (upgraded: broader promise)
 ───────────────────────────────────────────── */
-function SolutionSection({ onCTA }: { onCTA: () => void }) {
+function SolutionSection() {
   return (
     <section className="section-py px-4" style={{ background: "#1e1330" }}>
       <div className="max-w-3xl mx-auto text-center">
@@ -474,7 +316,7 @@ function SolutionSection({ onCTA }: { onCTA: () => void }) {
 
           <motion.button
             variants={fadeUp}
-            onClick={onCTA}
+            onClick={scrollToPackages}
             className="rounded-full text-lg font-bold px-8 py-4"
             style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
             whileHover={{ scale: 1.04 }}
@@ -628,7 +470,7 @@ function HowItWorksSection() {
 /* ─────────────────────────────────────────────
    NEW SECTION — WEDDING RESULT PREVIEW
 ───────────────────────────────────────────── */
-function WeddingResultSection({ onCTA }: { onCTA: () => void }) {
+function WeddingResultSection() {
   return (
     <section className="section-py px-4" style={{ background: "#1e1330" }}>
       <div className="max-w-3xl mx-auto text-center">
@@ -658,7 +500,7 @@ function WeddingResultSection({ onCTA }: { onCTA: () => void }) {
 
           <motion.button
             variants={fadeUp}
-            onClick={onCTA}
+            onClick={scrollToPackages}
             className="mt-10 rounded-full text-lg font-bold px-8 py-4"
             style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
             whileHover={{ scale: 1.04 }}
@@ -675,7 +517,7 @@ function WeddingResultSection({ onCTA }: { onCTA: () => void }) {
 /* ─────────────────────────────────────────────
    NEW SECTION — THE SECRET
 ───────────────────────────────────────────── */
-function TheSecretSection({ onCTA }: { onCTA: () => void }) {
+function TheSecretSection() {
   return (
     <section className="section-py px-4 relative overflow-hidden" style={{ background: "#120b1a" }}>
       <div
@@ -741,7 +583,7 @@ function TheSecretSection({ onCTA }: { onCTA: () => void }) {
 
           <motion.button
             variants={fadeUp}
-            onClick={onCTA}
+            onClick={scrollToPackages}
             className="rounded-full text-lg font-bold px-8 py-4"
             style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
             whileHover={{ scale: 1.04 }}
@@ -937,7 +779,7 @@ const packages = [
 
 function PackagesSection() {
   return (
-    <section className="section-py px-4" style={{ background: "#1e1330" }}>
+    <section id="packages" className="section-py px-4" style={{ background: "#1e1330" }}>
       <div className="max-w-5xl mx-auto">
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
           <motion.h2 variants={fadeUp} className="font-serif font-bold text-3xl md:text-4xl text-cream-DEFAULT mb-2 text-center">
@@ -1022,7 +864,7 @@ function PackagesSection() {
 /* ─────────────────────────────────────────────
    SECTION 8 — AUTHORITY
 ───────────────────────────────────────────── */
-function AuthoritySection({ onCTA }: { onCTA: () => void }) {
+function AuthoritySection() {
   return (
     <section className="section-py px-4" style={{ background: "#120b1a" }}>
       <div className="max-w-3xl mx-auto">
@@ -1109,12 +951,12 @@ function AuthoritySection({ onCTA }: { onCTA: () => void }) {
           </motion.div>
 
           <motion.div variants={fadeUp} className="mt-8 text-center">
-            <button
-              onClick={onCTA}
+            <a
+              href="/checkout/full"
               className="text-gold underline underline-offset-4 hover:text-gold-light transition-colors text-sm"
             >
               דברו עם יוסף ישירות ←
-            </button>
+            </a>
           </motion.div>
         </motion.div>
       </div>
@@ -1125,7 +967,7 @@ function AuthoritySection({ onCTA }: { onCTA: () => void }) {
 /* ─────────────────────────────────────────────
    SECTION 9 — FINAL CTA (upgraded)
 ───────────────────────────────────────────── */
-function FinalCTASection({ onCTA }: { onCTA: () => void }) {
+function FinalCTASection() {
   return (
     <section className="section-py px-4 relative overflow-hidden" style={{ background: "#1e1330" }}>
       <div
@@ -1151,16 +993,16 @@ function FinalCTASection({ onCTA }: { onCTA: () => void }) {
             <p className="text-cream-DEFAULT font-bold text-xl mt-2">ותרקדו.</p>
           </motion.div>
 
-          <motion.button
+          <motion.a
             variants={fadeUp}
-            onClick={onCTA}
-            className="rounded-full text-xl font-black px-10 py-5 mb-4 animate-pulse-gold"
+            href="/checkout/full"
+            className="rounded-full text-xl font-black px-10 py-5 mb-4 animate-pulse-gold inline-block"
             style={{ background: "linear-gradient(135deg, #c9963f 0%, #D4AF37 100%)", color: "#120b1a" }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
           >
             אני רוצה את הרגע הזה — קבע שיחה עם יוסף ←
-          </motion.button>
+          </motion.a>
 
           <motion.p variants={fadeUp} className="text-cream-muted/60 text-sm">
             ללא התחייבות — שיחה קצרה כדי להבין מה מתאים לכם
@@ -1189,7 +1031,7 @@ function Footer() {
 /* ─────────────────────────────────────────────
    STICKY NAV
 ───────────────────────────────────────────── */
-function StickyNav({ onCTA }: { onCTA: () => void }) {
+function StickyNav() {
   return (
     <motion.nav
       className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3"
@@ -1200,7 +1042,7 @@ function StickyNav({ onCTA }: { onCTA: () => void }) {
     >
       <span className="font-serif font-bold text-gold text-sm">Passion For Action</span>
       <button
-        onClick={onCTA}
+        onClick={scrollToPackages}
         className="rounded-full px-5 py-2 text-sm font-bold"
         style={{ background: "linear-gradient(135deg, #c9963f, #D4AF37)", color: "#120b1a" }}
       >
@@ -1214,20 +1056,12 @@ function StickyNav({ onCTA }: { onCTA: () => void }) {
    MAIN PAGE
 ───────────────────────────────────────────── */
 export default function Page() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<string | undefined>();
-
-  const openModal = (pkg?: string) => {
-    setSelectedPackage(pkg);
-    setModalOpen(true);
-  };
-
   return (
     <>
-      <StickyNav onCTA={() => openModal()} />
+      <StickyNav />
 
       <main className="pt-14">
-        <HeroSection onCTA={() => openModal()} />
+        <HeroSection />
 
         <div className="gold-divider" />
         <PainSection />
@@ -1236,7 +1070,7 @@ export default function Page() {
         <AgitationSection />
 
         <div className="gold-divider" />
-        <SolutionSection onCTA={() => openModal()} />
+        <SolutionSection />
 
         <div className="gold-divider" />
         <MusicStylesSection />
@@ -1245,10 +1079,10 @@ export default function Page() {
         <HowItWorksSection />
 
         <div className="gold-divider" />
-        <WeddingResultSection onCTA={() => openModal()} />
+        <WeddingResultSection />
 
         <div className="gold-divider" />
-        <TheSecretSection onCTA={() => openModal()} />
+        <TheSecretSection />
 
         <div className="gold-divider" />
         <TextTestimonialsSection />
@@ -1260,19 +1094,13 @@ export default function Page() {
         <PackagesSection />
 
         <div className="gold-divider" />
-        <AuthoritySection onCTA={() => openModal()} />
+        <AuthoritySection />
 
         <div className="gold-divider" />
-        <FinalCTASection onCTA={() => openModal()} />
+        <FinalCTASection />
 
         <Footer />
       </main>
-
-      <LeadModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        packageLabel={selectedPackage}
-      />
     </>
   );
 }
