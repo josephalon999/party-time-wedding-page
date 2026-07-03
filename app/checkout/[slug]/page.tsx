@@ -63,7 +63,7 @@ const PACKAGES: Record<string, {
   },
   full: {
     name: "החבילה המלאה",
-    price: "2,497",
+    price: "3,490",
     tagline: "מהפחד — לריקוד שיזכרו",
     badge: "⭐ הכי פופולרי",
     features: [
