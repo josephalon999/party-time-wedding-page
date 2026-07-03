@@ -10,7 +10,7 @@ const GMAIL_USER         = "josephalon999@gmail.com";
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD      || "";
 
 async function getResponderToken(): Promise<string> {
-  const res = await fetch(`${RESPONDER_API}/v1/oauth/token`, {
+  const res = await fetch(`${RESPONDER_API}/v2/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify({
@@ -33,7 +33,7 @@ async function addToResponder(token: string, contact: {
   const firstName = contact.name.split(" ")[0] || contact.name;
   const lastName  = contact.name.split(" ").slice(1).join(" ") || "";
 
-  const res = await fetch(`${RESPONDER_API}/v1/subscribers`, {
+  const res = await fetch(`${RESPONDER_API}/v2/subscribers`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify({
